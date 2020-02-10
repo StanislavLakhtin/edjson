@@ -1,0 +1,9 @@
+{
+  "wifi_aps": [{
+    "eduterra.pro" : {
+      "password": "wifipassword",
+      "priority": 10
+    }
+  }],
+  "rescan_threshold": 60
+}

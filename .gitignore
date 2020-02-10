@@ -1,0 +1,11 @@
+.venv
+.idea
+build/
+*.a
+*.o
+clion.build/
+
+cmake-build-debug
+build
+clion.build
+sdkconfig*
