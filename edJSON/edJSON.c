@@ -34,7 +34,7 @@ edjson_err_t as_string( const char * data, char * buffer ) {
 }
 
 // ------------------- fsm -----------------------
-#define TRANSITION_COUNT 12    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
+#define TRANSITION_COUNT 13    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
 static const struct json_transition state_transitions[] = {
     { idle,       JSON_OK,     object },
     { idle,       JSON_REPEAT, idle },
@@ -44,12 +44,14 @@ static const struct json_transition state_transitions[] = {
     { node,       JSON_OK,     definition },
     { definition, JSON_REPEAT, definition },
     { definition, JSON_OK,     value },
-    { definition, JSON_ALT,    idle },
+    { definition, JSON_ARR,    idle },
+    { definition, JSON_OBJ,    object },
     { value,      JSON_OK,     close },
     { close,      JSON_REPEAT,     close },
     { close,      JSON_OK,     idle },
 };
 
+// Внимание. Это должно быть полностью синхронизировано с json_states_t
 static const json_state_fptr_t states_fn[] = { idle_state,
                                                object_state,
                                                error_state,
@@ -128,25 +130,31 @@ enum json_ret_codes_t node_state( json_parser_t * parser ) {
 }
 
 enum json_ret_codes_t definition_state( json_parser_t * parser ) {
-  if ( strchr( SPACES, parser->current_symbol ) || parser->current_symbol == ':' )
+  if ( strchr( SPACES, parser->current_symbol ) )
     return JSON_REPEAT;
-  if ( strchr( QUOTES, parser->current_symbol ))
-    parser->value_kind = as_string_value;
-  else if ( parser->current_symbol == '[' ) {
+  else if ( parser->current_symbol == '[' || parser->current_symbol == '{' ) {
     flush_buffer( parser );
     json_element_t node = {
-        .kind = JSON_ARRAY,
+        .kind = (parser->current_symbol == '[') ? JSON_ARRAY : JSON_OBJECT,
         .name = parser->last_element
     };
     parser->on_element_value( &node, "" );
-    return JSON_ALT;
-  } else parser->value_kind = as_raw_value;
-  flush_buffer( parser );
-  return JSON_OK;
+    return (parser->current_symbol == '[') ? JSON_ARR : JSON_OBJ;
+  } else if (parser->current_symbol == ':') {
+    flush_buffer( parser );
+    parser->value_kind = unknown_value;
+    return JSON_OK;
+  }
+  return JSON_REPEAT;
 }
 
 enum json_ret_codes_t value_state( json_parser_t * parser ) {
-  if (( strchr( QUOTES, parser->current_symbol ) && parser->value_kind == as_string_value ) ||
+  if ( strchr( SPACES, parser->current_symbol ) )
+    return JSON_REPEAT;
+  else if (parser->value_kind == unknown_value) {
+    parser->value_kind = (strchr( QUOTES, parser->current_symbol )) ? as_string_value : as_raw_value;
+    return JSON_REPEAT;
+  } else if (( strchr( QUOTES, parser->current_symbol ) && parser->value_kind == as_string_value ) ||
       ( strchr( SPACES, parser->current_symbol ) && parser->value_kind == as_raw_value )) {
     json_element_t node = {
         .kind = JSON_VALUE,

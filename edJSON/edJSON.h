@@ -40,7 +40,7 @@ enum json_states_t {
 };
 
 enum json_ret_codes_t {
-  JSON_OK, JSON_FAIL, JSON_REPEAT, JSON_ALT
+  JSON_OK, JSON_FAIL, JSON_REPEAT, JSON_ARR, JSON_OBJ
 };
 
 struct json_transition {
@@ -65,6 +65,7 @@ typedef edjson_err_t ( * on_element_name_fn )( const char * node_name );
 typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node, const char * value );
 
 enum value_kind_t {
+  unknown_value,
   as_string_value,
   as_raw_value
 };
