@@ -34,7 +34,7 @@ edjson_err_t as_string( const char * data, char * buffer ) {
 }
 
 // ------------------- fsm -----------------------
-#define TRANSITION_COUNT 9    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
+#define TRANSITION_COUNT 12    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
 static const struct json_transition state_transitions[] = {
     { idle,       JSON_OK,     object },
     { idle,       JSON_REPEAT, idle },
@@ -45,6 +45,9 @@ static const struct json_transition state_transitions[] = {
     { definition, JSON_REPEAT, definition },
     { definition, JSON_OK,     value },
     { definition, JSON_ALT,    idle },
+    { value,      JSON_OK,     close },
+    { close,      JSON_REPEAT,     close },
+    { close,      JSON_OK,     idle },
 };
 
 static const json_state_fptr_t states_fn[] = { idle_state,
@@ -53,6 +56,7 @@ static const json_state_fptr_t states_fn[] = { idle_state,
                                                node_state,
                                                definition_state,
                                                value_state,
+                                               close_state,
 };
 
 #define PUSH_OR_FAIL()  (push_to_buffer(parser, parser->current_symbol)) ? JSON_FAIL : JSON_REPEAT
@@ -149,9 +153,13 @@ enum json_ret_codes_t value_state( json_parser_t * parser ) {
         .name = parser->last_element
     };
     parser->on_element_value( &node, parser->string_buffer );
-    return PUSH_OR_FAIL();
+    return JSON_OK;
   }
-  return JSON_REPEAT;
+  return PUSH_OR_FAIL();
+}
+
+enum json_ret_codes_t close_state( json_parser_t * parser ) {
+  return (parser->current_symbol == ',' || parser->current_symbol == '}') ? JSON_OK : JSON_REPEAT;
 }
 
 enum json_ret_codes_t error_state( json_parser_t * parser ) {

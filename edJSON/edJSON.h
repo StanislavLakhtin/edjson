@@ -36,7 +36,7 @@ enum json_states_t {
   node = 3,
   definition = 4,
   value = 5,
-  array = 6,
+  close = 6,
 };
 
 enum json_ret_codes_t {
@@ -105,6 +105,7 @@ enum json_ret_codes_t error_state( json_parser_t * parser );
 enum json_ret_codes_t node_state( json_parser_t * parser );
 enum json_ret_codes_t definition_state( json_parser_t * parser );
 enum json_ret_codes_t value_state( json_parser_t * parser );
+enum json_ret_codes_t close_state( json_parser_t * parser );
 
 edjson_err_t parse( json_parser_t * parser );
 enum json_states_t lookup_transitions(enum json_states_t state, enum json_ret_codes_t code);
