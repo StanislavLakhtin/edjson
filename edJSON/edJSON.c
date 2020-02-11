@@ -64,7 +64,7 @@ static const json_state_fptr_t states_fn[] = { idle_state,
 
 #define PUSH_OR_FAIL()  (push_to_buffer(parser, parser->current_symbol)) ? JSON_FAIL : JSON_REPEAT
 
-enum json_states_t lookup_transitions( enum json_states_t state, enum json_ret_codes_t code ) {
+json_states_t lookup_transitions( json_states_t state, json_ret_codes_t code ) {
   for ( int i = 0 ; i < TRANSITION_COUNT ; i++ ) {
     if ( state_transitions[ i ].src == state && state_transitions[ i ].ret_codes == code )
       return state_transitions[ i ].dst;
@@ -91,8 +91,9 @@ edjson_err_t parse( json_parser_t * parser ) {
   if ( reading_state != EDJSON_OK )
     return reading_state;
   flush_buffer( parser );
+  flush_stack(parser->stack);
   parser->position = 0x00;
-  enum json_states_t cur_state = ENTRY_PARSER_STATE;
+  json_states_t cur_state = ENTRY_PARSER_STATE;
   json_state_fptr_t fn;
   reading_state = parser->read( &parser->current_symbol );
   while ( reading_state == EDJSON_OK ) {
@@ -105,7 +106,7 @@ edjson_err_t parse( json_parser_t * parser ) {
   return EDJSON_OK;
 }
 
-enum json_ret_codes_t idle_state( json_parser_t * parser ) {
+json_ret_codes_t idle_state( json_parser_t * parser ) {
   if ( parser->current_symbol == '{' )
     return JSON_OK;
   else if ( strchr( SPACES, parser->current_symbol ))
@@ -114,14 +115,14 @@ enum json_ret_codes_t idle_state( json_parser_t * parser ) {
     return JSON_FAIL;
 }
 
-enum json_ret_codes_t object_state( json_parser_t * parser ) {
+json_ret_codes_t object_state( json_parser_t * parser ) {
   if ( strchr( SPACES, parser->current_symbol ))
     return JSON_REPEAT;
   parser->on_start_object();
   return JSON_OK;
 }
 
-enum json_ret_codes_t node_state( json_parser_t * parser ) {
+json_ret_codes_t node_state( json_parser_t * parser ) {
   if ( strchr( QUOTES, parser->current_symbol )) {
     memcpy( parser->last_element, parser->string_buffer, EDJSON_BUFFER_DEPTH );
     parser->on_element_name( parser->last_element );
@@ -130,7 +131,7 @@ enum json_ret_codes_t node_state( json_parser_t * parser ) {
   return PUSH_OR_FAIL();
 }
 
-enum json_ret_codes_t definition_state( json_parser_t * parser ) {
+json_ret_codes_t definition_state( json_parser_t * parser ) {
   if ( strchr( SPACES, parser->current_symbol ))
     return JSON_REPEAT;
   else if ( parser->current_symbol == ':' ) {
@@ -141,7 +142,7 @@ enum json_ret_codes_t definition_state( json_parser_t * parser ) {
   return JSON_REPEAT;
 }
 
-enum json_ret_codes_t value_state( json_parser_t * parser ) {
+json_ret_codes_t value_state( json_parser_t * parser ) {
   if ( strchr( SPACES, parser->current_symbol ))
     return JSON_REPEAT;
   else if ( parser->current_symbol == '[' || parser->current_symbol == '{' ) {
@@ -167,11 +168,11 @@ enum json_ret_codes_t value_state( json_parser_t * parser ) {
   return PUSH_OR_FAIL();
 }
 
-enum json_ret_codes_t close_state( json_parser_t * parser ) {
+json_ret_codes_t close_state( json_parser_t * parser ) {
   return ( parser->current_symbol == ',' || parser->current_symbol == '}' ) ? JSON_OK : JSON_REPEAT;
 }
 
-enum json_ret_codes_t error_state( json_parser_t * parser ) {
+json_ret_codes_t error_state( json_parser_t * parser ) {
   parser->on_error( parser->last_rc, parser->position );
   return JSON_OK;
 }
