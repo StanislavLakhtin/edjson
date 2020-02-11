@@ -7,7 +7,7 @@
 
 #include "edJSON_def.h"
 
-#define STACK_MAX_DEPTH  8
+#define STACK_MAX_DEPTH  32
 
 typedef struct {
   int head;

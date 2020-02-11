@@ -15,13 +15,15 @@ edjson_err_t pop(parse_object_state_t *data, edjson_stack * stack) {
 edjson_err_t push(parse_object_state_t data, edjson_stack * stack) {
   if (if_stack_full(stack))
     return EDJSON_ERR_MEMORY_OVERFLOW;
-  stack->data[stack->head] = data;
   stack->head += 1;
+  stack->data[stack->head] = data;
   return EDJSON_OK;
 }
 
 inline parse_object_state_t peek(edjson_stack * stack) {
-  return stack->data[stack->head];
+  if (stack->head >= 0)
+    return stack->data[stack->head];
+  return stack->data[0];
 }
 
 edjson_err_t flush_until(parse_object_state_t data, edjson_stack * stack) {
@@ -29,6 +31,7 @@ edjson_err_t flush_until(parse_object_state_t data, edjson_stack * stack) {
   while (_h > 0 ) {
     if (stack->data[_h] == data) {
       stack->head = _h;
+      memset(stack->data + stack->head, unknown, STACK_MAX_DEPTH - stack->head);
       return EDJSON_OK;
     }
     _h -= 1;

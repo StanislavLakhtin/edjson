@@ -29,17 +29,23 @@ typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node, con
 #define EDJSON_BUFFER_DEPTH 32      // length of most long name or string value
 #endif
 
-#define PUSH_OR_FAIL()  (push_to_buffer(parser, parser->current_symbol)) ? JSON_FAIL : JSON_REPEAT
+#ifndef FAIL_IF
+#define FAIL_IF(expression) do {\
+  if (expression) \
+    return PARSER_FAIL; \
+} while (0x00)
+#endif
 
 typedef struct {
   edjson_stack stack;
   char string_buffer[EDJSON_BUFFER_DEPTH];
   parse_string_state_t string_fsm_state;
+  parse_value_state_t value_fsm_state;
+  uint8_t string_hex_fsm_state;
   char last_element[EDJSON_BUFFER_DEPTH];
   uint16_t buffer_head;
   char current_symbol;
   uint32_t position;
-  value_kind_t value_kind;
 
   json_ret_codes_t last_rc;
 
@@ -59,6 +65,7 @@ extern "C"
 {
 #endif
 
+json_ret_codes_t handle_error( json_parser_t * parser );
 json_ret_codes_t detect_object( json_parser_t * parser );
 json_ret_codes_t parse_object( json_parser_t * parser );
 

@@ -28,21 +28,35 @@ typedef enum {
 } json_element_type_t;
 
 typedef enum  {
-  detect_obj= 0,
-  parse_obj = 1,
+  parser_error = 0,
+  detect_obj= 1,
+  parse_obj = 2,
 } json_states_t;
 
 typedef enum {
-  obj_begin, obj_name, obj_colon, obj_comma, obj_end, // Object FSM
+  unknown, obj_begin, obj_name, obj_colon, obj_comma, obj_end, // Object FSM
 } parse_object_state_t;
 
 typedef enum {
-  str_begin, rev_solidus, hex_digits, str_end, // String FSM
+  str_begin, str_body, reverse_solidus, hex_digits, str_end, // String FSM
 } parse_string_state_t;
 
 typedef enum {
-  JSON_OK, JSON_FAIL, JSON_REPEAT, JSON_ARR, JSON_OBJ
+  string_value,
+  number_value,
+  array_value,
+  true_value,
+  false_value,
+  null_value
+} parse_value_state_t;
+
+typedef enum {
+  OBJECT_DETECTED, PARSER_FAIL, REPEAT_PLEASE
 } json_ret_codes_t;
+
+#ifndef PUSH_OR_FAIL
+#define PUSH_OR_FAIL()  (push_to_buffer(parser, parser->current_symbol)) ? PARSER_FAIL : REPEAT_PLEASE
+#endif
 
 struct json_transition {
   json_states_t src;
@@ -50,18 +64,13 @@ struct json_transition {
   json_states_t dst;
 };
 
-#define ENTRY_PARSER_STATE  detect_object
-#define UNKNOWN_STATE       fail
+#define ENTRY_PARSER_STATE  detect_obj
+#define UNKNOWN_STATE       parser_error
 
 typedef struct {
   json_element_type_t kind;
   char * name;
 } json_element_t;
 
-typedef enum {
-  unknown_value,
-  as_string_value,
-  as_raw_value
-} value_kind_t;
 
 #endif //EDJSON_EDJSON_DEF_H
