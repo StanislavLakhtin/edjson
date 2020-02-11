@@ -68,6 +68,7 @@ extern "C"
 json_ret_codes_t handle_error( json_parser_t * parser );
 json_ret_codes_t detect_object( json_parser_t * parser );
 json_ret_codes_t parse_object( json_parser_t * parser );
+json_ret_codes_t parse_array( json_parser_t * parser );
 
 
 edjson_err_t parse( json_parser_t * parser );

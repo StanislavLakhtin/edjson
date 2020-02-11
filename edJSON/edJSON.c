@@ -5,9 +5,9 @@
 #include "edJSON.h"
 
 static const char *HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
-static const char SPACES[] = {' ', '\n', '\r', '\t', 0x00};
-static const char NEWLINE_CHARS[] = {'\n', '\r'};
-static const char ESCAPED_SYMBOLS[] = {'"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u'};
+static const char *SPACES = " \n\r\t";
+static const char *NEWLINE_CHARS = "\n\r";
+static const char *ESCAPED_SYMBOLS = "\"\\/bfnrtu";
 
 // ----------------- string buffer ------------------
 
@@ -33,18 +33,18 @@ json_ret_codes_t handle_error(json_parser_t *parser) {
   return EDJSON_OK;
 }
 
-#define TRANSITION_COUNT 2    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
-static const struct json_transition state_transitions[] = {
+#define TRANSITION_COUNT 3    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
+static const struct json_transition state_transitions[TRANSITION_COUNT] = {
     {detect_obj, OBJECT_DETECTED, parse_obj},
     {parse_obj,  OBJECT_DETECTED, parse_obj},
-
+    {parse_obj,  ARRAY_DETECTED,  parse_arr},
 };
 
 // Внимание. Это должно быть полностью синхронизировано с json_states_t
 static const json_state_fptr_t states_fn[] = {handle_error,
                                               detect_object,
                                               parse_object,
-
+                                              parse_array,
 };
 
 json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code) {
@@ -67,7 +67,7 @@ edjson_err_t parse(json_parser_t *parser) {
   while (reading_state == EDJSON_OK) {
     fn = states_fn[cur_state];
     parser->last_rc = fn(parser);
-    cur_state = (parser->last_rc == REPEAT_PLEASE)? cur_state : lookup_transitions(cur_state, parser->last_rc);
+    cur_state = (parser->last_rc == REPEAT_PLEASE) ? cur_state : lookup_transitions(cur_state, parser->last_rc);
     reading_state = parser->read(&parser->current_symbol);
     parser->position += 1;
   }
@@ -162,17 +162,42 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       if (strchr(SPACES, parser->current_symbol)) {
         return REPEAT_PLEASE;
       }
-      switch (parser->current_symbol) {
-        case '"':
-          parser->value_fsm_state = string_value;
-          break;
-        case '{':
-          parser->on_parse_event(OBJECT_START);
-          push(obj_begin, &parser->stack);
-          break;
-        //case ''
-      }
 
   }
+}
 
+
+static parse_value_state_t value_recognition(json_parser_t *parser) {
+  switch (parser->current_symbol) {
+    case '"':
+      return string_value;
+    case '{':
+      return object_value;
+    case '[':
+      return array_value;
+    case 't':
+      return true_value;
+    case 'f':
+      return false_value;
+    case 'n':
+      return null_value;
+    default:
+      return number_value;
+  }
+}
+
+json_ret_codes_t parse_array(json_parser_t *parser) {
+  parse_object_state_t current_arr_parser_state = peek(&parser->stack);
+  switch (current_arr_parser_state) {
+    case array_begin:
+      if (strchr(SPACES, parser->current_symbol))
+        return REPEAT_PLEASE;
+      if (parser->current_symbol == ']') {
+        FAIL_IF (push(array_end, &parser->stack));
+        parser->on_parse_event(ARRAY_END);
+        return REPEAT_PLEASE;
+      }
+      return REPEAT_PLEASE;
+    case
+  }
 }
