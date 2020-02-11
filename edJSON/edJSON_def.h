@@ -50,8 +50,7 @@ typedef enum {
   string_value,
   number_value,
   array_value,
-  true_value,
-  false_value,
+  boolean_value,
   null_value,
   unknown_value
 } parse_value_state_t;

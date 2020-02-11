@@ -150,6 +150,7 @@ static int parse_boolean(json_parser_t *parser) {
       return 1;
     else
       push_to_buffer(parser, parser->current_symbol);
+    return 0;
   }
   return -1;
 }
@@ -180,7 +181,7 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
           memcpy(parser->last_element, parser->string_buffer, EDJSON_BUFFER_DEPTH);
           FAIL_IF (push(obj_colon, &parser->stack));
           parser->on_parse_event(ELEMENT_START);
-          return werhgewrh;
+          return REPEAT_PLEASE;
       }
     case obj_colon:
       // detect value kind
@@ -191,7 +192,7 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       switch (_val_detect) {
         case array_value:
           FAIL_IF (push(array_begin, &parser->stack));
-          return OBJECT_DETECTED;
+          return ARRAY_DETECTED;
         case object_value:
           FAIL_IF (push(obj_begin, &parser->stack));
           return OBJECT_DETECTED;
@@ -215,11 +216,9 @@ static parse_value_state_t value_recognition(json_parser_t *parser) {
     case '[':
       return array_value;
     case 't':
-      push_to_buffer(parser, parser->current_symbol);
-      return true_value;
     case 'f':
       push_to_buffer(parser, parser->current_symbol);
-      return false_value;
+      return boolean_value;
     case 'n':
       push_to_buffer(parser, parser->current_symbol);
       return null_value;
@@ -248,9 +247,9 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
               parser->on_parse_event(ELEMENT_END);
               json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
               parser->on_element_value(&node);
-              return sdrhsdh;
+              return REPEAT_PLEASE;
           }
-        case true_value:
+        case boolean_value:
           switch (parse_boolean(parser)) {
             case -1:
               return PARSER_FAIL;
@@ -261,9 +260,22 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
               parser->on_parse_event(ELEMENT_END);
               json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
               parser->on_element_value(&node);
-              return asgsgah;
+              return REPEAT_PLEASE;
           }
   }
+    case value_end:
+      if (strchr(SPACES, parser->current_symbol)) {
+        return REPEAT_PLEASE;
+      }
+      if (parser->current_symbol == ',') {
+        return OBJECT_DETECTED;
+      } else if (parser->current_symbol == '}') {
+        parser->on_parse_event(OBJECT_END);
+        return OBJECT_END;
+      }
+        return PARSER_FAIL;
+  }
+
 }
 
 json_ret_codes_t parse_array(json_parser_t *parser) {
