@@ -21,18 +21,32 @@ static edjson_err_t error_handler( edjson_err_t code,  uint32_t position ) {
   return EDJSON_OK;
 }
 
-static edjson_err_t on_object ( void) {
-  printf("\nobject head");
+static edjson_err_t on_object ( edjson_event_kind_t event_kind ) {
+  printf("\nevent > ");
+  switch ( event_kind ) {
+    case OBJECT_START:
+      printf("OBJECT_START"); break;
+    case OBJECT_END:
+      printf("OBJECT_END"); break;
+    case ARRAY_START:
+      printf("ARRAY_START"); break;
+    case ARRAY_END:
+      printf("ARRAY_END"); break;
+    case ELEMENT_START:
+      printf("ELEMENT_START"); break;
+    case ELEMENT_END:
+      printf("ELEMENT_END"); break;
+  }
   return EDJSON_OK;
 }
 
 edjson_err_t on_start_element_name_handler(const char* node_name) {
-  printf("\nelement name: %s", node_name);
+  printf("\nfield name: %s", node_name);
   return EDJSON_OK;
 }
 
 edjson_err_t on_element_value_handler(const json_element_t * node, const char * value) {
-  printf("\nvalue detected: ");
+  printf("\nfield ");
   switch (node->kind){
     case JSON_OBJECT:
       printf("OBJECT"); break;
@@ -50,7 +64,7 @@ int main() {
       .read = read_from_file,
       .on_error = error_handler,
 
-      .on_start_object = on_object,
+      .on_parse_event = on_object,
       .on_element_name = on_start_element_name_handler,
       .on_element_value = on_element_value_handler,
   };

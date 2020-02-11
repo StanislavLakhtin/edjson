@@ -2,7 +2,11 @@
   "wifi_aps": [{
     "eduterra.pro" : {
       "password": "wifipassword",
-      "priority": 10
+      "priority": 10,
+      "active"  : true,
+      "object"  : {},
+      "что угоДнО\b":"tak-оке, значение",
+      "as_hex"  : "\ubBeF"
     }
   }],
   "rescan_threshold": 60

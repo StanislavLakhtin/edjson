@@ -19,9 +19,7 @@ typedef int8_t edjson_err_t;     //  user errors bigger than 0, 0 -- OK, system 
 #define EDJSON_ERR_WRONG_SYMBOL               -3
 #define EDJSON_EOF                            -4
 #define EDJSON_ERR_MEMORY_OVERFLOW            -5
-
-#define EDJSON_VALUE_STRING 0x00
-#define EDJSON_VALUE_SPEC   0x01
+#define EDJSON_ERR_STACK_ERROR                -6
 
 typedef enum {
   JSON_OBJECT,
@@ -30,14 +28,17 @@ typedef enum {
 } json_element_type_t;
 
 typedef enum  {
-  idle = 0,
-  object = 1,
-  fail = 2,
-  node = 3,
-  definition = 4,
-  value = 5,
-  close = 6,
+  detect_obj= 0,
+  parse_obj = 1,
 } json_states_t;
+
+typedef enum {
+  obj_begin, obj_name, obj_colon, obj_comma, obj_end, // Object FSM
+} parse_object_state_t;
+
+typedef enum {
+  str_begin, rev_solidus, hex_digits, str_end, // String FSM
+} parse_string_state_t;
 
 typedef enum {
   JSON_OK, JSON_FAIL, JSON_REPEAT, JSON_ARR, JSON_OBJ
@@ -49,12 +50,18 @@ struct json_transition {
   json_states_t dst;
 };
 
-#define ENTRY_PARSER_STATE  idle
+#define ENTRY_PARSER_STATE  detect_object
 #define UNKNOWN_STATE       fail
 
 typedef struct {
   json_element_type_t kind;
   char * name;
 } json_element_t;
+
+typedef enum {
+  unknown_value,
+  as_string_value,
+  as_raw_value
+} value_kind_t;
 
 #endif //EDJSON_EDJSON_DEF_H
