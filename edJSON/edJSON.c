@@ -5,9 +5,13 @@
 #include "edJSON.h"
 
 static const char *HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
+static const char *NUMBER_SYMBOLS = "0123456789eE.-";
 static const char *SPACES = " \n\r\t";
 static const char *NEWLINE_CHARS = "\n\r";
 static const char *ESCAPED_SYMBOLS = "\"\\/bfnrtu";
+
+static parse_value_state_t value_recognition(json_parser_t *parser);
+static int parse_string(json_parser_t *parser);
 
 // ----------------- string buffer ------------------
 
@@ -33,11 +37,12 @@ json_ret_codes_t handle_error(json_parser_t *parser) {
   return EDJSON_OK;
 }
 
-#define TRANSITION_COUNT 3    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
+#define TRANSITION_COUNT 4    // всего N правил. Следует синхронизировать число с нижеследующей инициализацие правил
 static const struct json_transition state_transitions[TRANSITION_COUNT] = {
     {detect_obj, OBJECT_DETECTED, parse_obj},
     {parse_obj,  OBJECT_DETECTED, parse_obj},
     {parse_obj,  ARRAY_DETECTED,  parse_arr},
+    {parse_obj,  VALUE_DETECTED,  parse_val},
 };
 
 // Внимание. Это должно быть полностью синхронизировано с json_states_t
@@ -45,6 +50,7 @@ static const json_state_fptr_t states_fn[] = {handle_error,
                                               detect_object,
                                               parse_object,
                                               parse_array,
+                                              parse_value,
 };
 
 json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code) {
@@ -129,6 +135,25 @@ static int parse_string(json_parser_t *parser) {
   return 0;
 }
 
+static const char * TRUE_STRING = "true";
+static const char * FALSE_STRING = "false";
+
+static int parse_boolean(json_parser_t *parser) {
+  if (strstr(TRUE_STRING, parser->string_buffer) ) {
+    if (strlen(parser->string_buffer) == strlen(TRUE_STRING))
+      return 1;
+    else
+      push_to_buffer(parser, parser->current_symbol);
+    return 0;
+  } else if  ( strstr(FALSE_STRING, parser->string_buffer)) {
+    if (strlen(parser->string_buffer) == strlen(FALSE_STRING))
+      return 1;
+    else
+      push_to_buffer(parser, parser->current_symbol);
+  }
+  return -1;
+}
+
 json_ret_codes_t parse_object(json_parser_t *parser) {
   parse_object_state_t current_obj_parser_state = peek(&parser->stack);
   switch (current_obj_parser_state) {
@@ -155,19 +180,33 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
           memcpy(parser->last_element, parser->string_buffer, EDJSON_BUFFER_DEPTH);
           FAIL_IF (push(obj_colon, &parser->stack));
           parser->on_parse_event(ELEMENT_START);
-          return REPEAT_PLEASE;
+          return werhgewrh;
       }
     case obj_colon:
       // detect value kind
       if (strchr(SPACES, parser->current_symbol)) {
         return REPEAT_PLEASE;
       }
-
+      parse_value_state_t _val_detect  = value_recognition(parser);
+      switch (_val_detect) {
+        case array_value:
+          FAIL_IF (push(array_begin, &parser->stack));
+          return OBJECT_DETECTED;
+        case object_value:
+          FAIL_IF (push(obj_begin, &parser->stack));
+          return OBJECT_DETECTED;
+        case unknown_value:
+          return PARSER_FAIL;
+        default:
+          FAIL_IF (push(value_begin, &parser->stack));
+          parser->value_fsm_state = _val_detect;
+          return VALUE_DETECTED;
+      }
   }
 }
 
-
 static parse_value_state_t value_recognition(json_parser_t *parser) {
+  flush_string_buffer(parser);
   switch (parser->current_symbol) {
     case '"':
       return string_value;
@@ -176,13 +215,54 @@ static parse_value_state_t value_recognition(json_parser_t *parser) {
     case '[':
       return array_value;
     case 't':
+      push_to_buffer(parser, parser->current_symbol);
       return true_value;
     case 'f':
+      push_to_buffer(parser, parser->current_symbol);
       return false_value;
     case 'n':
+      push_to_buffer(parser, parser->current_symbol);
       return null_value;
     default:
-      return number_value;
+      if (strchr(NUMBER_SYMBOLS, parser->current_symbol)) {
+        push_to_buffer(parser, parser->current_symbol);
+        return number_value;
+      } else
+        return unknown_value;
+  }
+}
+
+json_ret_codes_t parse_value(json_parser_t *parser) {
+  parse_object_state_t current_value_parser_state = peek(&parser->stack);
+  switch (current_value_parser_state) {
+    case value_begin:
+      switch (parser->value_fsm_state) {
+        case string_value:
+          switch (parse_string(parser)) {
+            case -1:
+              return PARSER_FAIL;
+            case 0:
+              return REPEAT_PLEASE;
+            case 1:
+              FAIL_IF (push(value_end, &parser->stack));
+              parser->on_parse_event(ELEMENT_END);
+              json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
+              parser->on_element_value(&node);
+              return sdrhsdh;
+          }
+        case true_value:
+          switch (parse_boolean(parser)) {
+            case -1:
+              return PARSER_FAIL;
+            case 0:
+              return REPEAT_PLEASE;
+            case 1:
+              FAIL_IF (push(value_end, &parser->stack));
+              parser->on_parse_event(ELEMENT_END);
+              json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
+              parser->on_element_value(&node);
+              return asgsgah;
+          }
   }
 }
 
@@ -198,6 +278,5 @@ json_ret_codes_t parse_array(json_parser_t *parser) {
         return REPEAT_PLEASE;
       }
       return REPEAT_PLEASE;
-    case
   }
 }

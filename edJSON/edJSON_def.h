@@ -32,11 +32,13 @@ typedef enum  {
   detect_obj= 1,
   parse_obj = 2,
   parse_arr = 3,
+  parse_val = 4,
 } json_states_t;
 
 typedef enum {
   unknown, obj_begin, obj_name, obj_colon, obj_comma, obj_end, // Object FSM
   array_begin, array_next, array_end,   // Array FSM
+  value_begin, value_end,   // Value FSM
 } parse_object_state_t;
 
 typedef enum {
@@ -50,7 +52,8 @@ typedef enum {
   array_value,
   true_value,
   false_value,
-  null_value
+  null_value,
+  unknown_value
 } parse_value_state_t;
 
 typedef enum {
@@ -73,7 +76,13 @@ struct json_transition {
 typedef struct {
   json_element_type_t kind;
   char * name;
+  char * value;
 } json_element_t;
 
+#define DEFAULT_VALUE_NODE(data) {\
+  .kind = JSON_VALUE, \
+  .name = parser->last_element, \
+  .value = data \
+};
 
 #endif //EDJSON_EDJSON_DEF_H

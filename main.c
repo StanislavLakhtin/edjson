@@ -45,7 +45,7 @@ edjson_err_t on_start_element_name_handler(const char* node_name) {
   return EDJSON_OK;
 }
 
-edjson_err_t on_element_value_handler(const json_element_t * node, const char * value) {
+edjson_err_t on_element_value_handler(const json_element_t * node) {
   printf("\nfield ");
   switch (node->kind){
     case JSON_OBJECT:
@@ -53,7 +53,7 @@ edjson_err_t on_element_value_handler(const json_element_t * node, const char * 
     case  JSON_ARRAY:
       printf("ARRAY"); break;
     case JSON_VALUE:
-      printf("name: %s, value: %s", node->name, value); break;
+      printf("name: %s, value: %s", node->name, node->value); break;
   }
   return EDJSON_OK;
 }

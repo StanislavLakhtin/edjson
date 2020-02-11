@@ -23,7 +23,7 @@ typedef edjson_err_t ( * edjson_read_next )( char * buffer );
 typedef edjson_err_t ( * edjson_error_handler )( edjson_err_t code, uint32_t position );
 typedef edjson_err_t ( * on_object_event_fn )( edjson_event_kind_t event_kind );
 typedef edjson_err_t ( * on_element_name_fn )( const char * node_name );
-typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node, const char * value );
+typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node );
 
 #ifndef EDJSON_BUFFER_DEPTH
 #define EDJSON_BUFFER_DEPTH 32      // length of most long name or string value
@@ -69,6 +69,7 @@ json_ret_codes_t handle_error( json_parser_t * parser );
 json_ret_codes_t detect_object( json_parser_t * parser );
 json_ret_codes_t parse_object( json_parser_t * parser );
 json_ret_codes_t parse_array( json_parser_t * parser );
+json_ret_codes_t parse_value( json_parser_t * parser );
 
 
 edjson_err_t parse( json_parser_t * parser );
