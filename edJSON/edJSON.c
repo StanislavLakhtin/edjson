@@ -178,6 +178,19 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
               parser->on_element_value(&node);
               return REPEAT_PLEASE;
           }
+        case null_value:
+          switch (parse_number(parser)) {
+            case EDJSON_ERR_WRONG_SYMBOL:
+              return PARSER_FAIL;
+            case EDJSON_OK:
+              return REPEAT_PLEASE;
+            case EDJSON_FINISH:
+              FAIL_IF (push(value_end, &parser->stack));
+              parser->emit_event(ELEMENT_END);
+              json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
+              parser->on_element_value(&node);
+              return REPEAT_PLEASE;
+          }
       }
     case value_end:
       SKIP_SPACES();
