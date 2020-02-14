@@ -157,5 +157,5 @@ int parse_number( json_parser_t * parser ) {
         return EDJSON_FINISH;
       return EDJSON_ERR_WRONG_SYMBOL;
   }
-  return EDJSON_OK;
+  return EDJSON_FINISH;
 }
