@@ -15,7 +15,11 @@ typedef enum {
   ARRAY_START,
   ARRAY_END,
   ELEMENT_START,
-  ELEMENT_END
+  ELEMENT_END,
+  VALUE_START,
+  VALUE_END,
+  ATTRIBUTE_START,
+  ATTRIBUTE_END
 } edjson_event_kind_t;
 
 typedef edjson_err_t ( * edjson_to_begin )( void );
@@ -36,6 +40,34 @@ typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node );
 } while (0x00)
 #endif
 
+#ifndef SKIP_SPACES
+#define SKIP_SPACES() do {\
+  if (strchr(SPACES, parser->current_symbol)) {\
+      return REPEAT_PLEASE;\
+  }\
+} while (0)
+#endif
+
+#ifndef GENERATE_VALUE_SIGNAL
+#define GENERATE_VALUE_SIGNAL(value, parser) switch (value) { \
+  case array_value: \
+    FAIL_IF (push(array_begin, &parser->stack));\
+    parser->emit_event(ARRAY_START);\
+    return ARRAY_DETECTED; \
+  case object_value:\
+    FAIL_IF (push(obj_begin, &parser->stack));\
+    parser->emit_event(OBJECT_START);\
+    return OBJECT_DETECTED;\
+  case unknown_value:\
+    return PARSER_FAIL;\
+  default:\
+    FAIL_IF (push(value_begin, &parser->stack));\
+    parser->value_fsm_state = _val_detect;\
+    parser->emit_event(ATTRIBUTE_START);\
+    return VALUE_DETECTED;\
+  }
+#endif
+
 typedef struct {
   edjson_stack stack;
   char string_buffer[EDJSON_BUFFER_DEPTH];
@@ -53,7 +85,7 @@ typedef struct {
   edjson_read_next read;
   edjson_error_handler on_error;
   // ------------- events handlers ----------------
-  on_object_event_fn on_parse_event;
+  on_object_event_fn emit_event;
   on_element_name_fn on_element_name;
   on_element_value_fn on_element_value;
 } json_parser_t;
@@ -70,13 +102,18 @@ json_ret_codes_t detect_object( json_parser_t * parser );
 json_ret_codes_t parse_object( json_parser_t * parser );
 json_ret_codes_t parse_array( json_parser_t * parser );
 json_ret_codes_t parse_value( json_parser_t * parser );
+json_ret_codes_t parse_number( json_parser_t * parser );
 
 
 edjson_err_t parse( json_parser_t * parser );
 json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code);
 
-edjson_err_t as_int( const char * data, int * value );
-edjson_err_t as_string( const char * data, char * buffer );
+int parse_boolean(json_parser_t *parser);
+int parse_string(json_parser_t *parser);
+parse_value_state_t value_recognition(json_parser_t *parser);
+
+void flush_string_buffer(json_parser_t *parser);
+edjson_err_t push_to_buffer(json_parser_t *parser, char symbol);
 
 #ifdef __cplusplus
 }

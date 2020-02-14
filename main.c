@@ -36,6 +36,14 @@ static edjson_err_t on_object ( edjson_event_kind_t event_kind ) {
       printf("ELEMENT_START"); break;
     case ELEMENT_END:
       printf("ELEMENT_END"); break;
+    case VALUE_START:
+      printf("VALUE_START"); break;
+    case VALUE_END:
+      printf("VALUE_END"); break;
+    case ATTRIBUTE_START:
+      printf("VALUE_START"); break;
+    case ATTRIBUTE_END:
+      printf("VALUE_END"); break;
   }
   return EDJSON_OK;
 }
@@ -64,7 +72,7 @@ int main() {
       .read = read_from_file,
       .on_error = error_handler,
 
-      .on_parse_event = on_object,
+      .emit_event = on_object,
       .on_element_name = on_start_element_name_handler,
       .on_element_value = on_element_value_handler,
   };

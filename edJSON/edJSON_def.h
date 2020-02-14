@@ -36,7 +36,7 @@ typedef enum  {
 } json_states_t;
 
 typedef enum {
-  unknown, obj_begin, obj_name, obj_colon, obj_comma, obj_end, // Object FSM
+  unknown, obj_begin, obj_name, obj_colon_wait, obj_colon, obj_comma, obj_end, // Object FSM
   array_begin, array_next, array_end,   // Array FSM
   value_begin, value_end,   // Value FSM
 } parse_object_state_t;
@@ -56,7 +56,7 @@ typedef enum {
 } parse_value_state_t;
 
 typedef enum {
-  OBJECT_DETECTED, PARSER_FAIL, REPEAT_PLEASE, ARRAY_DETECTED, VALUE_DETECTED
+  OBJECT_DETECTED, PARSER_FAIL, REPEAT_PLEASE, ARRAY_DETECTED, VALUE_DETECTED, VALUE_ENDED
 } json_ret_codes_t;
 
 #ifndef PUSH_OR_FAIL
