@@ -10,14 +10,11 @@ static const char * ESCAPED_SYMBOLS = "\"\\/bfnrtu";
 static const char * NEWLINE_CHARS = "\n\r";
 static const char * HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
 static const char * SPACE_SYMBOLS = DEFAULT_SPACE_SYMBOLS;
-
-// return
-// EDJSON_ERR_WRONG_SYMBOL if error,
-// 0  is ok
-// 1  is finished
-
 static const char * TRUE_STRING = "true";
 static const char * FALSE_STRING = "false";
+static const char * NULL_STRING = "null";
+
+
 
 int parse_boolean(json_parser_t *parser) {
   if (strstr(TRUE_STRING, parser->string_buffer) ) {
@@ -157,5 +154,5 @@ int parse_number( json_parser_t * parser ) {
         return EDJSON_FINISH;
       return EDJSON_ERR_WRONG_SYMBOL;
   }
-  return EDJSON_FINISH;
+  return EDJSON_ERR_WRONG_SYMBOL;
 }

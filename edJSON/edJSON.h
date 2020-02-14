@@ -94,8 +94,7 @@ typedef struct {
 } json_parser_t;
 
 typedef json_ret_codes_t ( * json_state_fptr_t ) ( json_parser_t * );
-
-
+typedef int (*parser_fptr_t) (json_parser_t * );
 
 #ifdef __cplusplus
 extern "C"
@@ -112,8 +111,8 @@ json_ret_codes_t parse_value( json_parser_t * parser );
 edjson_err_t parse( json_parser_t * parser );
 json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code);
 
-int parse_boolean(json_parser_t *parser);
-int parse_string(json_parser_t *parser);
+int parse_boolean( json_parser_t *parser );
+int parse_string( json_parser_t *parser );
 int parse_number( json_parser_t * parser );
 
 parse_value_state_t value_recognition(json_parser_t *parser);
