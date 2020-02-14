@@ -9,6 +9,8 @@
 
 #include "edJSON_stack.h"
 
+#define DEFAULT_SPACE_SYMBOLS " \n\r\t"
+
 typedef enum {
   OBJECT_START,
   OBJECT_END,
@@ -72,6 +74,7 @@ typedef struct {
   edjson_stack stack;
   char string_buffer[EDJSON_BUFFER_DEPTH];
   parse_string_state_t string_fsm_state;
+  parse_number_state_t number_fsm_state;
   parse_value_state_t value_fsm_state;
   uint8_t string_hex_fsm_state;
   char last_element[EDJSON_BUFFER_DEPTH];
@@ -92,6 +95,8 @@ typedef struct {
 
 typedef json_ret_codes_t ( * json_state_fptr_t ) ( json_parser_t * );
 
+
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -102,7 +107,6 @@ json_ret_codes_t detect_object( json_parser_t * parser );
 json_ret_codes_t parse_object( json_parser_t * parser );
 json_ret_codes_t parse_array( json_parser_t * parser );
 json_ret_codes_t parse_value( json_parser_t * parser );
-json_ret_codes_t parse_number( json_parser_t * parser );
 
 
 edjson_err_t parse( json_parser_t * parser );
@@ -110,6 +114,8 @@ json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code);
 
 int parse_boolean(json_parser_t *parser);
 int parse_string(json_parser_t *parser);
+int parse_number( json_parser_t * parser );
+
 parse_value_state_t value_recognition(json_parser_t *parser);
 
 void flush_string_buffer(json_parser_t *parser);

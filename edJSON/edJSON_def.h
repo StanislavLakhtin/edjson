@@ -14,6 +14,7 @@
 typedef int8_t edjson_err_t;     //  user errors bigger than 0, 0 -- OK, system error lower than 0
 
 #define EDJSON_OK                             0x00
+#define EDJSON_FINISH                          1
 #define EDJSON_ERR_RESOURCE_NOT_FOUND         -1
 #define EDJSON_ERR_JSON_TO_COMPLICATED        -2
 #define EDJSON_ERR_WRONG_SYMBOL               -3
@@ -54,6 +55,10 @@ typedef enum {
   null_value,
   unknown_value
 } parse_value_state_t;
+
+typedef enum {
+  number_begin, number_sign, number_zero, number_digit, number_dot, number_e, number_e_sign, number_e_digit,  // number FSM
+} parse_number_state_t;
 
 typedef enum {
   OBJECT_DETECTED, PARSER_FAIL, REPEAT_PLEASE, ARRAY_DETECTED, VALUE_DETECTED, VALUE_ENDED

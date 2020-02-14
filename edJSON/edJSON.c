@@ -4,7 +4,7 @@
 
 #include "edJSON.h"
 
-static const char *SPACES = " \n\r\t";
+static const char *SPACES = DEFAULT_SPACE_SYMBOLS;
 
 // ----------------- string buffer ------------------
 
@@ -107,11 +107,11 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       return PARSER_FAIL;
     case obj_name:
       switch (parse_string(parser)) {
-        case -1:
+        case EDJSON_ERR_WRONG_SYMBOL:
           return PARSER_FAIL;
-        case 0:
+        case EDJSON_OK:
           return REPEAT_PLEASE;
-        case 1:
+        case EDJSON_FINISH:
           memcpy(parser->last_element, parser->string_buffer, EDJSON_BUFFER_DEPTH);
           FAIL_IF (push(obj_colon_wait, &parser->stack));
           parser->emit_event(ELEMENT_START);
@@ -141,11 +141,11 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
       switch (parser->value_fsm_state) {
         case string_value:
           switch (parse_string(parser)) {
-            case -1:
+            case EDJSON_ERR_WRONG_SYMBOL:
               return PARSER_FAIL;
-            case 0:
+            case EDJSON_OK:
               return REPEAT_PLEASE;
-            case 1:
+            case EDJSON_FINISH:
               FAIL_IF (push(value_end, &parser->stack));
               parser->emit_event(ELEMENT_END);
               json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
@@ -154,45 +154,46 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
           }
         case boolean_value:
           switch (parse_boolean(parser)) {
-            case -1:
+            case EDJSON_ERR_WRONG_SYMBOL:
               return PARSER_FAIL;
-            case 0:
+            case EDJSON_OK:
               return REPEAT_PLEASE;
-            case 1:
+            case EDJSON_FINISH:
               FAIL_IF (push(value_end, &parser->stack));
               parser->emit_event(ELEMENT_END);
               json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
               parser->on_element_value(&node);
               return REPEAT_PLEASE;
-            case number_value:
-              switch (parse_boolean(parser)) {
-                case -1:
-                  return PARSER_FAIL;
-                case 0:
-                  return REPEAT_PLEASE;
-                case 1:
-                  FAIL_IF (push(value_end, &parser->stack));
-                  parser->emit_event(ELEMENT_END);
-                  json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
-                  parser->on_element_value(&node);
-                  return REPEAT_PLEASE;
-              }
           }
-        case value_end:
-          SKIP_SPACES();
-          if (parser->current_symbol == ',') {
-            FAIL_IF (flush_until(obj_begin, &parser->stack));
-            push(obj_begin, &parser->stack);
-            return OBJECT_DETECTED;
-          } else if (parser->current_symbol == '}') {
-            FAIL_IF (flush_until(obj_begin, &parser->stack));
-            parser->emit_event(OBJECT_END);
-            return VALUE_ENDED;
+        case number_value:
+          switch (parse_number(parser)) {
+            case EDJSON_ERR_WRONG_SYMBOL:
+              return PARSER_FAIL;
+            case EDJSON_OK:
+              return REPEAT_PLEASE;
+            case EDJSON_FINISH:
+              FAIL_IF (push(value_end, &parser->stack));
+              parser->emit_event(ELEMENT_END);
+              json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
+              parser->on_element_value(&node);
+              return REPEAT_PLEASE;
           }
-          return PARSER_FAIL;
       }
+    case value_end:
+      SKIP_SPACES();
+      if (parser->current_symbol == ',') {
+        FAIL_IF (flush_until(obj_begin, &parser->stack));
+        push(obj_begin, &parser->stack);
+        return OBJECT_DETECTED;
+      } else if (parser->current_symbol == '}') {
+        FAIL_IF (flush_until(obj_begin, &parser->stack));
+        parser->emit_event(OBJECT_END);
+        return VALUE_ENDED;
+      }
+      return PARSER_FAIL;
   }
 }
+
 
 json_ret_codes_t parse_array(json_parser_t *parser) {
   SKIP_SPACES();

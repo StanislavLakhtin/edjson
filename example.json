@@ -6,7 +6,8 @@
       "active"  : true,
       "object"  : {},
       "что угоДнО\b":"tak-оке, значение",
-      "as_hex"  : "\ubBeF"
+      "as_hex"  : "\ubBeF",
+      "strange_num" : -0e+1
     }
   }],
   "rescan_threshold": 60
