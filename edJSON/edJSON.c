@@ -145,7 +145,7 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
           parser->string_fsm_state = str_begin;
           _fptr = parse_string;
           break;
-        case string_constate_value:
+        case string_constant_value:
           _fptr = parse_string_constant;
           break;
         case number_value:

@@ -91,7 +91,7 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
     case 'f':
     case 'n':
       push_to_buffer(parser, parser->current_symbol);
-      return string_constate_value;
+      return string_constant_value;
     default:
       if (strchr(NUMBER_SYMBOLS, parser->current_symbol)) {
         push_to_buffer(parser, parser->current_symbol);
