@@ -27,7 +27,7 @@ typedef enum {
 typedef edjson_err_t ( * edjson_to_begin )( void );
 typedef edjson_err_t ( * edjson_read_next )( char * buffer );
 typedef edjson_err_t ( * edjson_error_handler )( edjson_err_t code, uint32_t position );
-typedef edjson_err_t ( * on_object_event_fn )( edjson_event_kind_t event_kind );
+typedef edjson_err_t ( * on_object_event_fn )( edjson_event_kind_t event_kind, void * );
 typedef edjson_err_t ( * on_element_name_fn )( const char * node_name );
 typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node );
 
@@ -54,18 +54,18 @@ typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node );
 #define GENERATE_VALUE_SIGNAL(value, parser) switch (value) { \
   case array_value: \
     FAIL_IF (push(array_begin, &parser->stack));\
-    parser->emit_event(ARRAY_START);\
+    parser->emit_event(ARRAY_START, parser);\
     return ARRAY_DETECTED; \
   case object_value:\
     FAIL_IF (push(obj_begin, &parser->stack));\
-    parser->emit_event(OBJECT_START);\
+    parser->emit_event(OBJECT_START, parser);\
     return OBJECT_DETECTED;\
   case unknown_value:\
     return PARSER_FAIL;\
   default:\
     FAIL_IF (push(value_begin, &parser->stack));\
     parser->value_fsm_state = _val_detect;\
-    parser->emit_event(ATTRIBUTE_START);\
+    parser->emit_event(ATTRIBUTE_START, parser);\
     return VALUE_DETECTED;\
   }
 #endif
@@ -111,7 +111,7 @@ json_ret_codes_t parse_value( json_parser_t * parser );
 edjson_err_t parse( json_parser_t * parser );
 json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code);
 
-int parse_boolean( json_parser_t *parser );
+int parse_string_constant(json_parser_t *parser );
 int parse_string( json_parser_t *parser );
 int parse_number( json_parser_t * parser );
 

@@ -81,7 +81,7 @@ edjson_err_t parse(json_parser_t *parser) {
 json_ret_codes_t detect_object(json_parser_t *parser) {
   SKIP_SPACES();
   if (parser->current_symbol == '{') {
-    parser->emit_event(OBJECT_START);
+    parser->emit_event(OBJECT_START, parser);
     push(obj_begin, &parser->stack);
     return OBJECT_DETECTED;
   } else if (strchr(SPACES, parser->current_symbol))
@@ -97,7 +97,7 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       SKIP_SPACES();
       if (parser->current_symbol == '}') {
         FAIL_IF (flush_until(obj_begin, &parser->stack));
-        parser->emit_event(OBJECT_END);
+        parser->emit_event(OBJECT_END, parser);
         return REPEAT_PLEASE; // todo check after comma
       } else if (parser->current_symbol == '"') {
         FAIL_IF (push(obj_name, &parser->stack));
@@ -114,7 +114,7 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
         case EDJSON_FINISH:
           memcpy(parser->last_element, parser->string_buffer, EDJSON_BUFFER_DEPTH);
           FAIL_IF (push(obj_colon_wait, &parser->stack));
-          parser->emit_event(ELEMENT_START);
+          parser->emit_event(ELEMENT_START, parser);
           return REPEAT_PLEASE;
       }
     case obj_colon_wait:
@@ -123,7 +123,7 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
         parse_object_state_t _w;
         pop(&_w, &parser->stack);
         FAIL_IF (push(obj_colon, &parser->stack));
-        parser->emit_event(ATTRIBUTE_START);
+        parser->emit_event(ATTRIBUTE_START, parser);
         return REPEAT_PLEASE;
       }
     case obj_colon:
@@ -142,27 +142,16 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
     case value_begin:
       switch (parser->value_fsm_state) {
         case string_value:
+          parser->string_fsm_state = str_begin;
           _fptr = parse_string;
           break;
-        case boolean_value:
-          _fptr = parse_boolean;
+        case string_constate_value:
+          _fptr = parse_string_constant;
           break;
         case number_value:
+          parser->number_fsm_state = number_begin;
           _fptr = parse_number;
           break;
-        case null_value:
-          switch (parse_number(parser)) {
-            case EDJSON_ERR_WRONG_SYMBOL:
-              return PARSER_FAIL;
-            case EDJSON_OK:
-              return REPEAT_PLEASE;
-            case EDJSON_FINISH:
-              FAIL_IF (push(value_end, &parser->stack));
-              parser->emit_event(ELEMENT_END);
-              json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
-              parser->on_element_value(&node);
-              return REPEAT_PLEASE;
-          }
       }
       if (_fptr != NULL) {
         ret_code = _fptr(parser);
@@ -173,7 +162,7 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
             return REPEAT_PLEASE;
           case EDJSON_FINISH:
             FAIL_IF (push(value_end, &parser->stack));
-            parser->emit_event(ELEMENT_END);
+            parser->emit_event(ELEMENT_END, parser);
             json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
             parser->on_element_value(&node);
             return REPEAT_PLEASE;
@@ -190,7 +179,7 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
         return OBJECT_DETECTED;
       } else if (parser->current_symbol == '}') {
         FAIL_IF (flush_until(obj_begin, &parser->stack));
-        parser->emit_event(OBJECT_END);
+        parser->emit_event(OBJECT_END, parser);
         return VALUE_ENDED;
       }
       return PARSER_FAIL;
@@ -206,7 +195,7 @@ json_ret_codes_t parse_array(json_parser_t *parser) {
       SKIP_SPACES();
       if (parser->current_symbol == ']') {
         FAIL_IF (flush_until(array_begin, &parser->stack));
-        parser->emit_event(ARRAY_END);
+        parser->emit_event(ARRAY_END, parser);
         return REPEAT_PLEASE;
       }
       parse_value_state_t _val_detect = value_recognition(parser);

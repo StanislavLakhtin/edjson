@@ -16,7 +16,7 @@ static const char * NULL_STRING = "null";
 
 
 
-int parse_boolean(json_parser_t *parser) {
+int parse_string_constant(json_parser_t *parser) {
   if (strstr(TRUE_STRING, parser->string_buffer) ) {
     if (strlen(parser->string_buffer) == strlen(TRUE_STRING))
       return EDJSON_FINISH;
@@ -25,6 +25,12 @@ int parse_boolean(json_parser_t *parser) {
     return EDJSON_OK;
   } else if  ( strstr(FALSE_STRING, parser->string_buffer)) {
     if (strlen(parser->string_buffer) == strlen(FALSE_STRING))
+      return EDJSON_FINISH;
+    else
+      push_to_buffer(parser, parser->current_symbol);
+    return EDJSON_OK;
+  }  else if  ( strstr(NULL_STRING, parser->string_buffer)) {
+    if (strlen(parser->string_buffer) == strlen(NULL_STRING))
       return EDJSON_FINISH;
     else
       push_to_buffer(parser, parser->current_symbol);
@@ -83,11 +89,9 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
       return array_value;
     case 't':
     case 'f':
-      push_to_buffer(parser, parser->current_symbol);
-      return boolean_value;
     case 'n':
       push_to_buffer(parser, parser->current_symbol);
-      return null_value;
+      return string_constate_value;
     default:
       if (strchr(NUMBER_SYMBOLS, parser->current_symbol)) {
         push_to_buffer(parser, parser->current_symbol);

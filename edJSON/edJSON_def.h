@@ -51,8 +51,7 @@ typedef enum {
   string_value,
   number_value,
   array_value,
-  boolean_value,
-  null_value,
+  string_constate_value,
   unknown_value
 } parse_value_state_t;
 

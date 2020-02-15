@@ -21,7 +21,8 @@ static edjson_err_t error_handler( edjson_err_t code,  uint32_t position ) {
   return EDJSON_OK;
 }
 
-static edjson_err_t on_object ( edjson_event_kind_t event_kind ) {
+static edjson_err_t on_object ( edjson_event_kind_t event_kind, void * _ptr ) {
+  json_parser_t * ptr = _ptr;
   printf("\nevent > ");
   switch ( event_kind ) {
     case OBJECT_START:
