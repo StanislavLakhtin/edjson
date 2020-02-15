@@ -96,7 +96,6 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
     default:
       if (strchr(NUMBER_SYMBOLS, parser->current_symbol)) {
         push_to_buffer(parser, parser->current_symbol);
-        parser->number_fsm_state = number_begin;
         return number_value;
       } else
         return unknown_value;
@@ -110,13 +109,13 @@ static const char * NUMBER_ZERO_E_STATE = ".eE";
 int parse_number( json_parser_t * parser ) {
   switch (parser->number_fsm_state) {
     case number_begin:
-      if ( parser->current_symbol == '-') {
+      if ( parser->string_buffer[0] == '-') {
         parser->number_fsm_state = number_sign;
-        push_to_buffer(parser, parser->current_symbol);
-        return EDJSON_OK;
-      } else if (!strchr(NUMBERS_ONLY_SYMBOLS, parser->current_symbol)) {
-        return EDJSON_ERR_WRONG_SYMBOL;
+        return parse_number(parser);
       }
+      parser->number_fsm_state = (parser->string_buffer[0] == '0') ? number_zero : number_digit;
+      return parse_number(parser);
+    case number_sign:
       parser->number_fsm_state = (parser->current_symbol == '0') ? number_zero : number_digit;
       push_to_buffer(parser, parser->current_symbol);
       return EDJSON_OK;
@@ -146,11 +145,13 @@ int parse_number( json_parser_t * parser ) {
         return EDJSON_OK;
       }
       return EDJSON_ERR_WRONG_SYMBOL;
+    case number_e:
     case number_e_sign:
       if (parser->current_symbol=='-' || parser->current_symbol=='+') {
         parser->number_fsm_state = number_e_digit;
         push_to_buffer(parser, parser->current_symbol);
-      } // do NOT return nothing here!
+      }
+      return EDJSON_OK;
     case number_e_digit:
       if (strchr(NUMBERS_ONLY_SYMBOLS, parser->current_symbol)) {
         push_to_buffer(parser, parser->current_symbol);

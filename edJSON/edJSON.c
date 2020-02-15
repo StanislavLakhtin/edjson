@@ -97,12 +97,8 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       SKIP_SPACES();
       if (parser->current_symbol == '}') {
         FAIL_IF (flush_until(obj_begin, &parser->stack));
-        // todo object can be an attribute, think how to select it
-        parse_object_state_t _check_to_colon = peek(&parser->stack);
-        if (_check_to_colon == obj_colon) {  // brackets for attribute, not for object
-          FAIL_IF (flush_until(obj_begin, &parser->stack));
-        }
         parser->emit_event(OBJECT_END, parser);
+        FAIL_IF (push(obj_end, &parser->stack));
         return REPEAT_PLEASE; // todo check after comma
       } else if (parser->current_symbol == '"') {
         FAIL_IF (push(obj_name, &parser->stack));
@@ -135,6 +131,12 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       flush_string_buffer(parser);
       parse_value_state_t _val_detect = value_recognition(parser);
       GENERATE_VALUE_SIGNAL(_val_detect, parser);
+    case obj_end:
+      SKIP_SPACES();
+      if (parser->current_symbol == ',') {
+        FAIL_IF (push(obj_begin, &parser->stack));
+        return REPEAT_PLEASE;
+      }
   }
   return PARSER_FAIL;
 }
