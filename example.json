@@ -8,7 +8,8 @@
       "что угоДнО\b":"tak-оке, значение",
       "as_hex"  : "\ubBeF",
       "strange_num" : -0e+1
-    }
+    },
+    "som \n e \t \\": [{},{}]
   }],
   "rescan_threshold": 60
 }

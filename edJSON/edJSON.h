@@ -19,9 +19,7 @@ typedef enum {
   ELEMENT_START,
   ELEMENT_END,
   VALUE_START,
-  VALUE_END,
-  ATTRIBUTE_START,
-  ATTRIBUTE_END
+  VALUE_END
 } edjson_event_kind_t;
 
 typedef edjson_err_t ( * edjson_to_begin )( void );
@@ -65,7 +63,7 @@ typedef edjson_err_t ( * on_element_value_fn )( const json_element_t * node );
   default:\
     FAIL_IF (push(value_begin, &parser->stack));\
     parser->value_fsm_state = _val_detect;\
-    parser->emit_event(ATTRIBUTE_START, parser);\
+    parser->emit_event(VALUE_START, parser);\
     return VALUE_DETECTED;\
   }
 #endif

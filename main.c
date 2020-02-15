@@ -41,10 +41,6 @@ static edjson_err_t on_object ( edjson_event_kind_t event_kind, void * _ptr ) {
       printf("VALUE_START"); break;
     case VALUE_END:
       printf("VALUE_END"); break;
-    case ATTRIBUTE_START:
-      printf("VALUE_START"); break;
-    case ATTRIBUTE_END:
-      printf("VALUE_END"); break;
   }
   return EDJSON_OK;
 }

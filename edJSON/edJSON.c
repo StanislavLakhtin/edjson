@@ -97,6 +97,11 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       SKIP_SPACES();
       if (parser->current_symbol == '}') {
         FAIL_IF (flush_until(obj_begin, &parser->stack));
+        // todo object can be an attribute, think how to select it
+        parse_object_state_t _check_to_colon = peek(&parser->stack);
+        if (_check_to_colon == obj_colon) {  // brackets for attribute, not for object
+          FAIL_IF (flush_until(obj_begin, &parser->stack));
+        }
         parser->emit_event(OBJECT_END, parser);
         return REPEAT_PLEASE; // todo check after comma
       } else if (parser->current_symbol == '"') {
@@ -123,7 +128,6 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
         parse_object_state_t _w;
         pop(&_w, &parser->stack);
         FAIL_IF (push(obj_colon, &parser->stack));
-        parser->emit_event(ATTRIBUTE_START, parser);
         return REPEAT_PLEASE;
       }
     case obj_colon:
@@ -164,6 +168,13 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
             json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
             parser->on_element_value(&node);
             parser->emit_event(VALUE_END, parser);
+            if (parser->current_symbol == ',' || parser->current_symbol == '}') {
+              FAIL_IF (flush_until(obj_begin, &parser->stack));
+              parser->emit_event(ELEMENT_END, parser);
+              if (parser->current_symbol == ',')
+                push(obj_begin, &parser->stack);
+              return (parser->current_symbol == ',') ? OBJECT_DETECTED : VALUE_ENDED;
+            }
             return REPEAT_PLEASE;
           default:
             return PARSER_FAIL;
@@ -174,14 +185,12 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
 
     case value_end:
       SKIP_SPACES();
-      if (parser->current_symbol == ',') {
+      if (parser->current_symbol == ',' || parser->current_symbol == '}') {
         FAIL_IF (flush_until(obj_begin, &parser->stack));
-        push(obj_begin, &parser->stack);
-        return OBJECT_DETECTED;
-      } else if (parser->current_symbol == '}') {
-        FAIL_IF (flush_until(obj_begin, &parser->stack));
-        parser->emit_event(OBJECT_END, parser);
-        return VALUE_ENDED;
+        parser->emit_event(ELEMENT_END, parser);
+        if (parser->current_symbol == ',')
+          push(obj_begin, &parser->stack);
+        return (parser->current_symbol == ',') ? OBJECT_DETECTED : VALUE_ENDED;
       }
       return PARSER_FAIL;
   }
