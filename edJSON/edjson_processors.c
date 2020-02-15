@@ -82,6 +82,7 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
   flush_string_buffer(parser);
   switch (parser->current_symbol) {
     case '"':
+      parser->string_fsm_state = str_begin;
       return string_value;
     case '{':
       return object_value;
@@ -95,6 +96,7 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
     default:
       if (strchr(NUMBER_SYMBOLS, parser->current_symbol)) {
         push_to_buffer(parser, parser->current_symbol);
+        parser->number_fsm_state = number_begin;
         return number_value;
       } else
         return unknown_value;

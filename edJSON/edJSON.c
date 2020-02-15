@@ -128,6 +128,7 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
       }
     case obj_colon:
       SKIP_SPACES();
+      flush_string_buffer(parser);
       parse_value_state_t _val_detect = value_recognition(parser);
       GENERATE_VALUE_SIGNAL(_val_detect, parser);
   }
@@ -142,14 +143,12 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
     case value_begin:
       switch (parser->value_fsm_state) {
         case string_value:
-          parser->string_fsm_state = str_begin;
           _fptr = parse_string;
           break;
         case string_constant_value:
           _fptr = parse_string_constant;
           break;
         case number_value:
-          parser->number_fsm_state = number_begin;
           _fptr = parse_number;
           break;
       }
@@ -162,10 +161,12 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
             return REPEAT_PLEASE;
           case EDJSON_FINISH:
             FAIL_IF (push(value_end, &parser->stack));
-            parser->emit_event(ELEMENT_END, parser);
             json_element_t node = DEFAULT_VALUE_NODE(parser->string_buffer);
             parser->on_element_value(&node);
+            parser->emit_event(VALUE_END, parser);
             return REPEAT_PLEASE;
+          default:
+            return PARSER_FAIL;
         }
       } else {
         return PARSER_FAIL;

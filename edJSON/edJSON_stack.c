@@ -30,8 +30,8 @@ edjson_err_t flush_until(parse_object_state_t data, edjson_stack * stack) {
   int _h = stack->head;
   while (_h > 0 ) {
     if (stack->data[_h] == data) {
-      stack->head = _h;
-      memset(stack->data + stack->head, unknown, STACK_MAX_DEPTH - stack->head);
+      memset(stack->data + _h, unknown, STACK_MAX_DEPTH - _h);
+      stack->head = _h - 1;
       return EDJSON_OK;
     }
     _h -= 1;
