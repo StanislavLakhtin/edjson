@@ -1,13 +1,13 @@
 {
   "wifi_aps": [{
     "eduterra.pro" : {
-      "strange_num" : -0e+10,
-      "password": "wifipassword",
-      "priority": 10,
+      "password": "wifi p,a.s}s{w\no\tr\\d",
+      "priority": 10.5,
       "active"  : true,
       "object"  : {},
       "что угоДнО\b":"tak-оке, значение",
-      "as_hex"  : "\ubBeF"
+      "as_hex"  : "\ubBeF",
+      "strange_num" : -0e+10
     },
     "som \n e \t \\": [{},{}]
   }],
