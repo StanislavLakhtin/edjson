@@ -9,7 +9,7 @@
       "as_hex"  : "\ubBeF",
       "strange_num" : -0e+10
     },
-    "som \n e \t \\": [{},{}]
+    "som \n e \t \\": [{},{},[{}],{}]
   }],
   "rescan_threshold": 60
 }
