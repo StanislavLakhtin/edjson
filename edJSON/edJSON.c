@@ -48,6 +48,7 @@ json_ret_codes_t parse(json_parser_t *parser) {
     return EDJSON_ERR_WRONG_SYMBOL;
   }
   json_ret_codes_t err_code = parse_object(parser);
+  reading_state = parser->finish();
   return (err_code == EDJSON_FINISH) ? EDJSON_OK : err_code;
 }
 

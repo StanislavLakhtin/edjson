@@ -73,7 +73,7 @@ typedef enum {
   VALUE_END
 } edjson_event_kind_t;
 
-typedef json_ret_codes_t ( *edjson_to_begin )(void);
+typedef json_ret_codes_t ( *sys_init_deinit_fptr_t )(void);
 
 typedef json_ret_codes_t ( *edjson_read_next )(char *buffer);
 
@@ -102,7 +102,8 @@ typedef struct {
 
   json_ret_codes_t last_rc;
 
-  edjson_to_begin init;
+  sys_init_deinit_fptr_t init;
+  sys_init_deinit_fptr_t finish;
   edjson_read_next read;
   edjson_error_handler on_error;
   // ------------- events handlers ----------------

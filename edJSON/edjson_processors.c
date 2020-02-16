@@ -9,7 +9,6 @@ static const char *NUMBER_SYMBOLS = "0123456789eE.-";
 static const char *ESCAPED_SYMBOLS = "\"\\/bfnrtu";
 static const char *NEWLINE_CHARS = "\n\r";
 static const char *HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
-static const char *SPACE_SYMBOLS = DEFAULT_SPACE_SYMBOLS;
 static const char *NUMBER_ENDOFVALUE_SYMBOLS = DEFAULT_SPACE_SYMBOLS "},";
 static const char *TRUE_STRING = "true";
 static const char *FALSE_STRING = "false";
