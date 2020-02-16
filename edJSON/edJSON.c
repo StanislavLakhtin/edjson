@@ -58,7 +58,6 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
   do {
     if (parser->current_symbol == '}') {
       parser->emit_event(OBJECT_END, parser);
-      EDJSON_CHECK(read_next(parser, true));
       return EDJSON_FINISH;
     }
     if (parser->current_symbol == ',')
@@ -139,10 +138,12 @@ json_ret_codes_t parse_array(json_parser_t *parser) {
     json_ret_codes_t err_code = parse_value(parser);
     if (err_code)
       return err_code;
+    if (parser->value_fsm_state == object_value || parser->value_fsm_state == array_value)
+      EDJSON_CHECK(read_next(parser, false));
     if (parser->current_symbol == ']') {
       parser->emit_event(ARRAY_END, parser);
       EDJSON_CHECK(read_next(parser, false));
-      return EDJSON_FINISH;
+      return EDJSON_OK;
     }
   } while (parser->current_symbol == ',');
   return EDJSON_ERR_WRONG_SYMBOL;

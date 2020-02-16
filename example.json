@@ -3,8 +3,9 @@
     "eduterra.pro" : {
       "password": "wifi p,a.s}s{w\no\tr\\d",
       "priority": 10.5,
+      "majority": "",
       "active"  : true,
-      "arr_strange" : ["строка", 123, 10.5, {}, [{}], []],
+      "arr_strange" : ["строка", 123, 10.5, {}, [{}], [""],[]],
       "object"  : {
         "internal": {}
       },
