@@ -23,10 +23,13 @@ extern "C"
 {
 #endif
 
-edjson_err_t  pop(parse_object_state_t * data, edjson_stack * stack);
-edjson_err_t push(parse_object_state_t data, edjson_stack * stack);
-parse_object_state_t peek(edjson_stack * stack);
-edjson_err_t flush_until(parse_object_state_t data, edjson_stack * stack);
+json_ret_codes_t pop(parse_object_state_t *data, edjson_stack *stack);
+
+json_ret_codes_t push(parse_object_state_t data, edjson_stack *stack);
+
+parse_object_state_t peek(edjson_stack *stack);
+
+json_ret_codes_t flush_until(parse_object_state_t data, edjson_stack *stack);
 
 #ifdef __cplusplus
 }

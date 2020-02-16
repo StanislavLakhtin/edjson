@@ -4,7 +4,10 @@
       "password": "wifi p,a.s}s{w\no\tr\\d",
       "priority": 10.5,
       "active"  : true,
-      "object"  : {},
+      "arr_strange" : ["строка", 123, 10.5, {}, [{}]],
+      "object"  : {
+        "internal": {}
+      },
       "что угоДнО\b":"tak-оке, значение",
       "as_hex"  : "\ubBeF",
       "strange_num" : -0e+10

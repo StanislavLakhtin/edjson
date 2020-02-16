@@ -11,35 +11,49 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef int8_t edjson_err_t;     //  user errors bigger than 0, 0 -- OK, system error lower than 0
-
-#define EDJSON_OK                             0x00
-#define EDJSON_FINISH                          1
-#define EDJSON_ERR_RESOURCE_NOT_FOUND         -1
-#define EDJSON_ERR_JSON_TO_COMPLICATED        -2
-#define EDJSON_ERR_WRONG_SYMBOL               -3
-#define EDJSON_EOF                            -4
-#define EDJSON_ERR_MEMORY_OVERFLOW            -5
-#define EDJSON_ERR_STACK_ERROR                -6
+// ----------------- edjson_ret_t codes ---------------
+typedef enum {
+  EDJSON_OK = 0x00,
+  EDJSON_FINISH = 1,
+  EDJSON_ERR_RESOURCE_NOT_FOUND = -1,
+  EDJSON_ERR_JSON_STACK_OVERFLOW = -2,
+  EDJSON_ERR_WRONG_SYMBOL = -3,
+  EDJSON_EOF = -4,
+  EDJSON_ERR_MEMORY_OVERFLOW = -5,
+  EDJSON_ERR_STACK_ERROR = -6,
+  EDJSON_ERR_PARSER = -7,
+  EDJSON_OBJECT_DETECTED = 2,
+  EDJSON_REPEAT = 3,
+  EDJSON_REPEAT_WITH_SKIP_READ = 4,
+  EDJSON_ARRAY_DETECTED = 5,
+  EDJSON_ATTRIBUTE_DETECTED = 6,
+  EDJSON_VALUE_DETECTED = 7,
+  EDJSON_DETECT_NEXT = 8,
+} json_ret_codes_t;
 
 typedef enum {
+  JSON_ROOT,
   JSON_OBJECT,
   JSON_ARRAY,
-  JSON_VALUE
+  JSON_ATTRIBUTE
 } json_element_type_t;
 
-typedef enum  {
-  parser_error = 0,
-  detect_obj= 1,
-  parse_obj = 2,
-  parse_arr = 3,
+typedef enum {
+  parse_err = 0,
+  parse_obj = 1,
+  parse_arr = 2,
+  parse_attr = 3,
   parse_val = 4,
 } json_states_t;
 
+
+#define ENTRY_PARSER_STATE  parse_obj
+#define UNKNOWN_STATE       parse_err
+
 typedef enum {
-  unknown, obj_begin, obj_name, obj_colon_wait, obj_colon, obj_comma, obj_end, // Object FSM
-  array_begin, array_next, array_end,   // Array FSM
-  value_begin, value_end,   // Value FSM
+  unknown, obj_begin, attr_name, obj_end, // Object FSM
+  array_begin, array_end,   // Array FSM
+  value_begin, value_body, value_end,   // Value FSM
 } parse_object_state_t;
 
 typedef enum {
@@ -56,16 +70,21 @@ typedef enum {
 } parse_value_state_t;
 
 typedef enum {
-  number_begin, number_sign, number_zero, number_digit, number_dot, number_e, number_e_sign, number_e_digit,  // number FSM
+  number_begin,
+  number_sign,
+  number_zero,
+  number_digit,
+  number_dot,
+  number_e,
+  number_e_sign,
+  number_e_digit,  // number FSM
 } parse_number_state_t;
 
-typedef enum {
-  OBJECT_DETECTED, PARSER_FAIL, REPEAT_PLEASE, ARRAY_DETECTED, VALUE_DETECTED, VALUE_ENDED
-} json_ret_codes_t;
-
-#ifndef PUSH_OR_FAIL
-#define PUSH_OR_FAIL()  (push_to_buffer(parser, parser->current_symbol)) ? PARSER_FAIL : REPEAT_PLEASE
+#ifndef RETURN_STATE
+#define RETURN_STATE(SIGNAL, SKIP) return {.signal = SIGNAL, .skip_next_read = SKIP};
+#define RETURN(SIGNAL) RETURN_STATE(SIGNAL, false)
 #endif
+
 
 struct json_transition {
   json_states_t src;
@@ -73,13 +92,11 @@ struct json_transition {
   json_states_t dst;
 };
 
-#define ENTRY_PARSER_STATE  detect_obj
-#define UNKNOWN_STATE       parser_error
 
 typedef struct {
   json_element_type_t kind;
-  char * name;
-  char * value;
+  char *name;
+  char *value;
 } json_element_t;
 
 #define DEFAULT_VALUE_NODE(data) {\

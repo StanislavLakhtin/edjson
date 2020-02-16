@@ -4,32 +4,31 @@
 
 #include "edJSON.h"
 
-static const char * NUMBERS_ONLY_SYMBOLS = "0123456789";
-static const char * NUMBER_SYMBOLS = "0123456789eE.-";
-static const char * ESCAPED_SYMBOLS = "\"\\/bfnrtu";
-static const char * NEWLINE_CHARS = "\n\r";
-static const char * HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
-static const char * SPACE_SYMBOLS = DEFAULT_SPACE_SYMBOLS;
-static const char * TRUE_STRING = "true";
-static const char * FALSE_STRING = "false";
-static const char * NULL_STRING = "null";
-
+static const char *NUMBERS_ONLY_SYMBOLS = "0123456789";
+static const char *NUMBER_SYMBOLS = "0123456789eE.-";
+static const char *ESCAPED_SYMBOLS = "\"\\/bfnrtu";
+static const char *NEWLINE_CHARS = "\n\r";
+static const char *HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
+static const char *SPACE_SYMBOLS = DEFAULT_SPACE_SYMBOLS;
+static const char *TRUE_STRING = "true";
+static const char *FALSE_STRING = "false";
+static const char *NULL_STRING = "null";
 
 
 int parse_string_constant(json_parser_t *parser) {
-  if (strstr(TRUE_STRING, parser->string_buffer) ) {
+  if (strstr(TRUE_STRING, parser->string_buffer)) {
     if (strlen(parser->string_buffer) == strlen(TRUE_STRING))
       return EDJSON_FINISH;
     else
       push_to_buffer(parser, parser->current_symbol);
     return EDJSON_OK;
-  } else if  ( strstr(FALSE_STRING, parser->string_buffer)) {
+  } else if (strstr(FALSE_STRING, parser->string_buffer)) {
     if (strlen(parser->string_buffer) == strlen(FALSE_STRING))
       return EDJSON_FINISH;
     else
       push_to_buffer(parser, parser->current_symbol);
     return EDJSON_OK;
-  }  else if  ( strstr(NULL_STRING, parser->string_buffer)) {
+  } else if (strstr(NULL_STRING, parser->string_buffer)) {
     if (strlen(parser->string_buffer) == strlen(NULL_STRING))
       return EDJSON_FINISH;
     else
@@ -52,7 +51,7 @@ int parse_string(json_parser_t *parser) {
           break;
         case '"':
           parser->string_fsm_state = str_end;
-          return 0x1;
+          return EDJSON_FINISH;
       }
       push_to_buffer(parser, parser->current_symbol);
       return EDJSON_OK;
@@ -73,7 +72,7 @@ int parse_string(json_parser_t *parser) {
         parser->string_fsm_state = str_body;
       return EDJSON_OK;
     case str_end:
-      return 0x01;
+      return EDJSON_FINISH;
   }
   return EDJSON_OK;
 }
@@ -104,12 +103,12 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
 
 // number_begin, number_sign, number_zero, number_digit, number_dot, number_digit_after_dot, number_e, number_e_sign, number_e_digit,  // number FSM
 
-static const char * NUMBER_ZERO_E_STATE = ".eE";
+static const char *NUMBER_ZERO_E_STATE = ".eE";
 
-int parse_number( json_parser_t * parser ) {
+int parse_number(json_parser_t *parser) {
   switch (parser->number_fsm_state) {
     case number_begin:
-      if ( parser->string_buffer[0] == '-') {
+      if (parser->string_buffer[0] == '-') {
         parser->number_fsm_state = number_sign;
         return parse_number(parser);
       }
@@ -132,7 +131,7 @@ int parse_number( json_parser_t * parser ) {
       parser->number_fsm_state = (parser->current_symbol == '.') ? number_dot : number_e;
       push_to_buffer(parser, parser->current_symbol);
       return EDJSON_OK;
-    case  number_dot:
+    case number_dot:
       if (strchr(NUMBERS_ONLY_SYMBOLS, parser->current_symbol)) {
         push_to_buffer(parser, parser->current_symbol);
         return EDJSON_OK;
@@ -147,7 +146,7 @@ int parse_number( json_parser_t * parser ) {
       return EDJSON_ERR_WRONG_SYMBOL;
     case number_e:
     case number_e_sign:
-      if (parser->current_symbol=='-' || parser->current_symbol=='+') {
+      if (parser->current_symbol == '-' || parser->current_symbol == '+') {
         parser->number_fsm_state = number_e_digit;
         push_to_buffer(parser, parser->current_symbol);
       }
