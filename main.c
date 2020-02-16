@@ -23,24 +23,26 @@ static json_ret_codes_t error_handler( json_ret_codes_t code,  uint32_t position
 
 static json_ret_codes_t on_object ( edjson_event_kind_t event_kind, void * _ptr ) {
   json_parser_t * ptr = _ptr;
-  printf("\nevent > ");
+  printf("\n%04d > ", ptr->position);
   switch ( event_kind ) {
     case OBJECT_START:
-      printf("OBJECT_START"); break;
+      printf("{"); break;
     case OBJECT_END:
-      printf("OBJECT_END"); break;
+      printf("}"); break;
     case ARRAY_START:
-      printf("ARRAY_START"); break;
+      printf("["); break;
     case ARRAY_END:
-      printf("ARRAY_END"); break;
+      printf("]"); break;
     case FIELD_START:
-      printf("ATTRIBUTE_FOUND"); break;
+      printf("."); break;
+    case FIELD_NAME:
+      printf("Attr name: \"%s\"", ptr->last_element); break;
     case FIELD_END:
-      printf("ATTRIBUTE_END"); break;
+      printf(";"); break;
     case VALUE_START:
-      printf("VALUE_START"); break;
+      printf("="); break;
     case VALUE_END:
-      printf("VALUE_END"); break;
+      printf("%s", ptr->string_buffer); break;
   }
   return EDJSON_OK;
 }

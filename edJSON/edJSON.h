@@ -67,6 +67,7 @@ typedef enum {
   ARRAY_START,          // array
   ARRAY_END,
   FIELD_START,          // Field : value
+  FIELD_NAME,
   FIELD_END,
   VALUE_START,
   VALUE_END
@@ -124,11 +125,9 @@ extern "C"
 #endif
 
 json_ret_codes_t parse_object(json_parser_t *parser);
-
+json_ret_codes_t parse_attribute(json_parser_t *parser);
 json_ret_codes_t parse_array(json_parser_t *parser);
-
 json_ret_codes_t parse_value(json_parser_t *parser);
-
 json_ret_codes_t parse(json_parser_t *parser);
 
 
