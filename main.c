@@ -1,4 +1,5 @@
 #include "edJSON/edJSON.h"
+#include <stdarg.h>
 
 #define DEFAULT_FILENAME "../example.json"
 
@@ -39,8 +40,17 @@ static char *val_kind[] = {
     "unknown",
 };
 
-static json_ret_codes_t on_object(edjson_event_kind_t event_kind, void *_ptr) {
-  json_parser_t *ptr = _ptr;
+static json_ret_codes_t on_object(int num, ... ) {
+
+  va_list valist;
+  va_start(valist, num);
+  if (num <2) {
+    printf("Error in parse event method");
+    va_end(valist);
+    return -1;
+  }
+  edjson_event_kind_t event_kind = va_arg(valist, edjson_event_kind_t);
+  json_parser_t *ptr = va_arg(valist, json_parser_t*);
   printf("\n%04d > ", ptr->position);
   switch (event_kind) {
     case OBJECT_START:
@@ -59,7 +69,7 @@ static json_ret_codes_t on_object(edjson_event_kind_t event_kind, void *_ptr) {
       printf(".");
       break;
     case FIELD_NAME:
-      printf("Attr name: \"%s\"", ptr->last_element);
+      printf("Attr name: %s", ptr->string_buffer); // todo improve events
       break;
     case FIELD_END:
       printf(";");
@@ -68,9 +78,15 @@ static json_ret_codes_t on_object(edjson_event_kind_t event_kind, void *_ptr) {
       printf("=");
       break;
     case VALUE_END:
-      printf("%s, \"%s\"", val_kind[ptr->value_fsm_state], ptr->string_buffer);
+      if (num != 3) {
+        printf("Get value event error");
+        break;
+      }
+      parse_value_state_t kind = va_arg(valist, parse_value_state_t);
+      printf("%s, \"%s\"", val_kind[kind], ptr->string_buffer);
       break;
   }
+  va_end(valist);
   return EDJSON_OK;
 }
 

@@ -53,7 +53,7 @@ json_ret_codes_t parse(json_parser_t *parser) {
 }
 
 json_ret_codes_t parse_object(json_parser_t *parser) {
-  parser->emit_event(OBJECT_START, parser);
+  parser->emit_event(2, OBJECT_START, parser);
   // В неопределённом состоянии. Мы ожидаем только символа {
   EDJSON_CHECK(read_next(parser, true));
   json_ret_codes_t err_code;
@@ -66,14 +66,14 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
   }
   if (parser->current_symbol != '}')
     return EDJSON_ERR_WRONG_SYMBOL;
-  parser->emit_event(OBJECT_END, parser);
+  parser->emit_event(2, OBJECT_END, parser);
   err_code = read_next(parser, true);
   return (err_code == EDJSON_EOF || err_code == EDJSON_OK)? EDJSON_FINISH : err_code;
 }
 
 json_ret_codes_t parse_attribute(json_parser_t *parser) {
   json_ret_codes_t err_code;
-  parser->emit_event(FIELD_START, parser);
+  parser->emit_event(2, FIELD_START, parser);
   // определяем имя атрибута
   flush_string_buffer(parser);
   do {
@@ -82,15 +82,17 @@ json_ret_codes_t parse_attribute(json_parser_t *parser) {
   } while (!err_code);
   if (err_code != EDJSON_FINISH)
     return err_code;
-  memcpy(parser->last_element, parser->string_buffer, EDJSON_BUFFER_DEPTH);
-  parser->emit_event(FIELD_NAME, parser);
+  //char * attribute_name = malloc(strlen(parser->string_buffer));
+  //memcpy(attribute_name, parser->string_buffer, strlen(parser->string_buffer));
+  parser->emit_event(2, FIELD_NAME, parser);
+  //free(attribute_name);
   EDJSON_CHECK(read_next(parser, true));
   if (parser->current_symbol != ':')
     return EDJSON_ERR_WRONG_SYMBOL;
-  err_code = parse_value(parser);
+  err_code = detect_kind_of_value(parser);
   if (err_code)
     return err_code;
-  parser->emit_event(FIELD_END, parser);
+  parser->emit_event(2, FIELD_END, parser);
   if (parser->current_symbol == ',') {
     EDJSON_CHECK(read_next(parser, true));
     return EDJSON_OK;
@@ -98,12 +100,12 @@ json_ret_codes_t parse_attribute(json_parser_t *parser) {
   return EDJSON_FINISH;
 }
 
-json_ret_codes_t parse_value(json_parser_t *parser) {
+json_ret_codes_t detect_kind_of_value(json_parser_t *parser) {
   flush_string_buffer(parser);
   parser_fptr_t _fptr = NULL;
   EDJSON_CHECK(read_next(parser, true));
-  parser->value_fsm_state = value_recognition(parser);
-  switch (parser->value_fsm_state) {
+  parse_value_state_t _kind = value_recognition(parser);
+  switch (_kind) {
     case string_value:
       _fptr = parse_string;
       break;
@@ -124,34 +126,39 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
   }
   if (_fptr == NULL)
     return EDJSON_ERR_PARSER;
-  parser->emit_event(VALUE_START, parser);
+  return parse_value(_fptr, _kind, parser);
+}
+
+json_ret_codes_t parse_value(parser_fptr_t fptr, parse_value_state_t kind, json_parser_t *parser) {
+  //todo разделить на два метода и в подчинённый передавать определённый тип
+  parser->emit_event(2, VALUE_START, parser);
   int ret_code;
   do {
-    if (parser->value_fsm_state == string_value
-        || parser->value_fsm_state == string_constant_value
-        || parser->value_fsm_state == number_value)
+    if (kind == string_value
+        || kind == string_constant_value
+        || kind == number_value)
       EDJSON_CHECK(read_next(parser, false));
-    ret_code = _fptr(parser);
+    ret_code = fptr(parser);
   } while (!ret_code);
   if (ret_code != EDJSON_FINISH)
     return ret_code;
-  if (parser->value_fsm_state == string_value)
+  if (kind == string_value)
     EDJSON_CHECK(read_next(parser, true));     // compensate symbol '"'
   if (strchr(SPACES, parser->current_symbol))       // if value is the last in line (before })
     EDJSON_CHECK(read_next(parser, true));
-  parser->emit_event(VALUE_END, parser);
+  parser->emit_event(3, VALUE_END, parser, kind);
   return EDJSON_OK;
 }
 
 json_ret_codes_t parse_array(json_parser_t *parser) {
-  parser->emit_event(ARRAY_START, parser);
+  parser->emit_event(2, ARRAY_START, parser);
   do {
-    json_ret_codes_t err_code = parse_value(parser);
+    json_ret_codes_t err_code = detect_kind_of_value(parser);
     if (err_code)
       return err_code;
   } while (parser->current_symbol == ',');
   if (parser->current_symbol == ']') {
-    parser->emit_event(ARRAY_END, parser);
+    parser->emit_event(2, ARRAY_END, parser);
     EDJSON_CHECK(read_next(parser, false));
     return EDJSON_FINISH;
   }

@@ -73,13 +73,14 @@ typedef enum {
   VALUE_END
 } edjson_event_kind_t;
 
+
 typedef json_ret_codes_t ( *sys_init_deinit_fptr_t )(void);
 
 typedef json_ret_codes_t ( *edjson_read_next )(char *buffer);
 
 typedef json_ret_codes_t ( *edjson_error_handler )(json_ret_codes_t code, uint32_t position);
 
-typedef json_ret_codes_t ( *on_object_event_fn )(edjson_event_kind_t event_kind, void *);
+typedef json_ret_codes_t ( *on_object_event_fn )(int arg_cnt, ...);
 
 typedef json_ret_codes_t ( *on_element_name_fn )(const char *node_name);
 
@@ -93,9 +94,7 @@ typedef struct {
   char string_buffer[EDJSON_BUFFER_DEPTH];
   parse_string_state_t string_fsm_state;
   parse_number_state_t number_fsm_state;
-  parse_value_state_t value_fsm_state;
   uint8_t string_hex_fsm_state;
-  char last_element[EDJSON_BUFFER_DEPTH];
   uint16_t buffer_head;
   char current_symbol;
   uint32_t position;
@@ -128,7 +127,8 @@ extern "C"
 json_ret_codes_t parse_object(json_parser_t *parser);
 json_ret_codes_t parse_attribute(json_parser_t *parser);
 json_ret_codes_t parse_array(json_parser_t *parser);
-json_ret_codes_t parse_value(json_parser_t *parser);
+json_ret_codes_t parse_value(parser_fptr_t _fptr, parse_value_state_t kind, json_parser_t *parser);
+json_ret_codes_t detect_kind_of_value(json_parser_t *parser);
 json_ret_codes_t parse(json_parser_t *parser);
 
 
