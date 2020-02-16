@@ -47,7 +47,8 @@ json_ret_codes_t parse(json_parser_t *parser) {
   if (parser->current_symbol != '{') {
     return EDJSON_ERR_WRONG_SYMBOL;
   }
-  return parse_object(parser);
+  json_ret_codes_t err_code = parse_object(parser);
+  return (err_code == EDJSON_FINISH) ? EDJSON_OK : err_code;
 }
 
 json_ret_codes_t parse_object(json_parser_t *parser) {
@@ -55,16 +56,18 @@ json_ret_codes_t parse_object(json_parser_t *parser) {
   // В неопределённом состоянии. Мы ожидаем только символа {
   EDJSON_CHECK(read_next(parser, true));
   json_ret_codes_t err_code;
-  if (parser->current_symbol == '}') {
-    parser->emit_event(OBJECT_END, parser);
-    return EDJSON_FINISH;
-  } else if (parser->current_symbol == '"') {
-    err_code = parse_attribute(parser);
-    if (err_code)
+  if (parser->current_symbol == '"') {
+    do {
+      err_code = parse_attribute(parser);
+    } while (err_code == EDJSON_OK);
+    if (err_code != EDJSON_FINISH)
       return err_code;
   }
+  if (parser->current_symbol != '}')
+    return EDJSON_ERR_WRONG_SYMBOL;
   parser->emit_event(OBJECT_END, parser);
-  return (parser->current_symbol == '}') ? EDJSON_FINISH : EDJSON_ERR_WRONG_SYMBOL;
+  err_code = read_next(parser, true);
+  return (err_code == EDJSON_EOF || err_code == EDJSON_OK)? EDJSON_FINISH : err_code;
 }
 
 json_ret_codes_t parse_attribute(json_parser_t *parser) {
@@ -73,7 +76,7 @@ json_ret_codes_t parse_attribute(json_parser_t *parser) {
   // определяем имя атрибута
   flush_string_buffer(parser);
   do {
-    EDJSON_CHECK(read_next(parser, true));
+    EDJSON_CHECK(read_next(parser, false));
     err_code = parse_string(parser);
   } while (!err_code);
   if (err_code != EDJSON_FINISH)
@@ -89,15 +92,14 @@ json_ret_codes_t parse_attribute(json_parser_t *parser) {
   parser->emit_event(FIELD_END, parser);
   if (parser->current_symbol == ',') {
     EDJSON_CHECK(read_next(parser, true));
-    return parse_attribute(parser);
+    return EDJSON_OK;
   }
-  return EDJSON_OK;
+  return EDJSON_FINISH;
 }
 
 json_ret_codes_t parse_value(json_parser_t *parser) {
   flush_string_buffer(parser);
   parser_fptr_t _fptr = NULL;
-  int ret_code = EDJSON_ERR_WRONG_SYMBOL;
   EDJSON_CHECK(read_next(parser, true));
   parser->value_fsm_state = value_recognition(parser);
   switch (parser->value_fsm_state) {
@@ -122,17 +124,20 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
   if (_fptr == NULL)
     return EDJSON_ERR_PARSER;
   parser->emit_event(VALUE_START, parser);
+  int ret_code;
   do {
     if (parser->value_fsm_state == string_value
         || parser->value_fsm_state == string_constant_value
         || parser->value_fsm_state == number_value)
-      EDJSON_CHECK(read_next(parser, true));
+      EDJSON_CHECK(read_next(parser, false));
     ret_code = _fptr(parser);
   } while (!ret_code);
   if (ret_code != EDJSON_FINISH)
     return ret_code;
   if (parser->value_fsm_state == string_value)
-    EDJSON_CHECK(read_next(parser, true)); // compensate symbol '"'
+    EDJSON_CHECK(read_next(parser, true));     // compensate symbol '"'
+  if (strchr(SPACES, parser->current_symbol))       // if value is the last in line (before })
+    EDJSON_CHECK(read_next(parser, true));
   parser->emit_event(VALUE_END, parser);
   return EDJSON_OK;
 }
@@ -143,10 +148,6 @@ json_ret_codes_t parse_array(json_parser_t *parser) {
     json_ret_codes_t err_code = parse_value(parser);
     if (err_code)
       return err_code;
-    if (parser->value_fsm_state != string_value
-        && parser->value_fsm_state != string_constant_value
-        && parser->value_fsm_state != number_value)
-      EDJSON_CHECK(read_next(parser, true));
   } while (parser->current_symbol == ',');
   if (parser->current_symbol == ']') {
     parser->emit_event(ARRAY_END, parser);

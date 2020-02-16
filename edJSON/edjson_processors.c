@@ -10,6 +10,7 @@ static const char *ESCAPED_SYMBOLS = "\"\\/bfnrtu";
 static const char *NEWLINE_CHARS = "\n\r";
 static const char *HEX_SYMBOLS = "0123456789aAbBcCdDeEfF";
 static const char *SPACE_SYMBOLS = DEFAULT_SPACE_SYMBOLS;
+static const char *NUMBER_ENDOFVALUE_SYMBOLS = DEFAULT_SPACE_SYMBOLS "},";
 static const char *TRUE_STRING = "true";
 static const char *FALSE_STRING = "false";
 static const char *NULL_STRING = "null";
@@ -124,7 +125,7 @@ json_ret_codes_t parse_number(json_parser_t *parser) {
         return EDJSON_OK;
       } // do NOT return nothing here!
     case number_zero:
-      if (strchr(SPACE_SYMBOLS, parser->current_symbol) || parser->current_symbol == ',')
+      if (strchr(NUMBER_ENDOFVALUE_SYMBOLS, parser->current_symbol))
         return EDJSON_FINISH;
       if (!strchr(NUMBER_ZERO_E_STATE, parser->current_symbol))
         return EDJSON_ERR_WRONG_SYMBOL;
@@ -136,7 +137,7 @@ json_ret_codes_t parse_number(json_parser_t *parser) {
         push_to_buffer(parser, parser->current_symbol);
         return EDJSON_OK;
       }
-      if (strchr(SPACE_SYMBOLS, parser->current_symbol) || parser->current_symbol == ',')
+      if (strchr(NUMBER_ENDOFVALUE_SYMBOLS, parser->current_symbol))
         return EDJSON_FINISH;
       if (parser->current_symbol == 'e' || parser->current_symbol == 'E') {
         parser->number_fsm_state = number_e_sign;
@@ -156,7 +157,7 @@ json_ret_codes_t parse_number(json_parser_t *parser) {
         push_to_buffer(parser, parser->current_symbol);
         return EDJSON_OK;
       }
-      if (strchr(SPACE_SYMBOLS, parser->current_symbol) || parser->current_symbol == ',')
+      if (strchr(NUMBER_ENDOFVALUE_SYMBOLS, parser->current_symbol))
         return EDJSON_FINISH;
       return EDJSON_ERR_WRONG_SYMBOL;
   }

@@ -6,7 +6,7 @@
       "majority": "",
       "active"  : true,
       "arr_strange" : ["строка", 123, 10.5, {}],
-      "object"  : {
+      "SDR"  : {
         "internal": {}
       },
       "что угоДнО\b":"tak-оке, значение",
