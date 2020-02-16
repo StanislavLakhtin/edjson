@@ -21,6 +21,15 @@ static json_ret_codes_t error_handler( json_ret_codes_t code,  uint32_t position
   return EDJSON_OK;
 }
 
+static char * val_kind[] = {
+    "object",
+    "string",
+    "number",
+    "array",
+    "string_constant",
+    "unknown",
+};
+
 static json_ret_codes_t on_object ( edjson_event_kind_t event_kind, void * _ptr ) {
   json_parser_t * ptr = _ptr;
   printf("\n%04d > ", ptr->position);
@@ -42,7 +51,7 @@ static json_ret_codes_t on_object ( edjson_event_kind_t event_kind, void * _ptr 
     case VALUE_START:
       printf("="); break;
     case VALUE_END:
-      printf("%s", ptr->string_buffer); break;
+      printf("%s, \"%s\"", val_kind[ptr->value_fsm_state] ,ptr->string_buffer); break;
   }
   return EDJSON_OK;
 }

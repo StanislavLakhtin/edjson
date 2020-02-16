@@ -34,12 +34,12 @@ typedef enum {
 } parse_string_state_t;
 
 typedef enum {
-  object_value,
-  string_value,
-  number_value,
-  array_value,
-  string_constant_value,
-  unknown_value
+  object_value = 0,
+  string_value = 1,
+  number_value = 2,
+  array_value = 3,
+  string_constant_value = 4,
+  unknown_value = 5,
 } parse_value_state_t;
 
 typedef enum {

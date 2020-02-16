@@ -132,7 +132,7 @@ json_ret_codes_t parse_value(json_parser_t *parser) {
   if (ret_code != EDJSON_FINISH)
     return ret_code;
   if (parser->value_fsm_state == string_value)
-    EDJSON_CHECK(read_next(parser, false)); // compensate symbol '"'
+    EDJSON_CHECK(read_next(parser, true)); // compensate symbol '"'
   parser->emit_event(VALUE_END, parser);
   return EDJSON_OK;
 }
