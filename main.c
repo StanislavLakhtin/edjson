@@ -34,9 +34,9 @@ static json_ret_codes_t on_object ( edjson_event_kind_t event_kind, void * _ptr 
     case ARRAY_END:
       printf("ARRAY_END"); break;
     case FIELD_START:
-      printf("FIELD_START"); break;
+      printf("ATTRIBUTE_FOUND"); break;
     case FIELD_END:
-      printf("FIELD_END"); break;
+      printf("ATTRIBUTE_END"); break;
     case VALUE_START:
       printf("VALUE_START"); break;
     case VALUE_END:
@@ -73,5 +73,5 @@ int main() {
       .on_element_name = on_start_element_name_handler,
       .on_element_value = on_element_value_handler,
   };
-  parse(&parser);
+  return parse(&parser);
 }
