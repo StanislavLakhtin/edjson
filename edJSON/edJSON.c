@@ -44,10 +44,13 @@ json_ret_codes_t parse(json_parser_t *parser) {
     return reading_state;
   parser->position = 0x00;
   EDJSON_CHECK(read_next(parser, true));
-  if (parser->current_symbol != '{') {
+  json_ret_codes_t err_code;
+  if (parser->current_symbol == '{') {
+    err_code = parse_object(parser);
+  } else if (parser->current_symbol == '[')
+    err_code = parse_array(parser);
+  else
     return EDJSON_ERR_WRONG_SYMBOL;
-  }
-  json_ret_codes_t err_code = parse_object(parser);
   reading_state = parser->finish();
   return (err_code == EDJSON_FINISH) ? EDJSON_OK : err_code;
 }
