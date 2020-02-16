@@ -3,4 +3,4 @@ project(edJSON C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(edJSON main.c edJSON/edJSON.c edJSON/edJSON_stack.c edJSON/edjson_processors.c)
+add_executable(edJSON main.c edJSON/edJSON.c edJSON/edjson_processors.c)

@@ -5,16 +5,73 @@
 #ifndef edJSON_H
 #define edJSON_H
 
-#include "edJSON_def.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "edJSON_stack.h"
+// ----------------- edjson_ret_t codes ---------------
+typedef enum {
+  EDJSON_OK = 0x00,
+  EDJSON_FINISH = 1,
+  EDJSON_ERR_RESOURCE_NOT_FOUND = -1,
+  EDJSON_ERR_JSON_STACK_OVERFLOW = -2,
+  EDJSON_ERR_WRONG_SYMBOL = -3,
+  EDJSON_EOF = -4,
+  EDJSON_ERR_MEMORY_OVERFLOW = -5,
+  EDJSON_ERR_STACK_ERROR = -6,
+  EDJSON_ERR_PARSER = -7,
+  EDJSON_OBJECT_DETECTED = 2,
+  EDJSON_REPEAT = 3,
+  EDJSON_REPEAT_WITH_SKIP_READ = 4,
+  EDJSON_ARRAY_DETECTED = 5,
+  EDJSON_ATTRIBUTE_DETECTED = 6,
+  EDJSON_VALUE_DETECTED = 7,
+  EDJSON_DETECT_NEXT = 8,
+} json_ret_codes_t;
+
+typedef enum {
+  JSON_OBJECT,
+  JSON_ARRAY,
+  JSON_ATTRIBUTE
+} json_element_type_t;
+
+
+typedef enum {
+  str_begin, str_body, reverse_solidus, hex_digits, str_end, // String FSM
+} parse_string_state_t;
+
+typedef enum {
+  object_value,
+  string_value,
+  number_value,
+  array_value,
+  string_constant_value,
+  unknown_value
+} parse_value_state_t;
+
+typedef enum {
+  number_begin,
+  number_sign,
+  number_zero,
+  number_digit,
+  number_dot,
+  number_e,
+  number_e_sign,
+  number_e_digit,  // number FSM
+} parse_number_state_t;
+
+typedef struct {
+  json_element_type_t kind;
+  char *name;
+  char *value;
+} json_element_t;
 
 #define DEFAULT_SPACE_SYMBOLS " \n\r\t"
 
 typedef enum {
-  ROOT_START,           // Root Object
-  ROOT_END,
-  OBJECT_START,         // Any other (except root) object
+  OBJECT_START,         // Any object
   OBJECT_END,
   ARRAY_START,          // array
   ARRAY_END,
@@ -41,7 +98,6 @@ typedef json_ret_codes_t ( *on_element_value_fn )(const json_element_t *node);
 #endif
 
 typedef struct {
-  edjson_stack stack;
   char string_buffer[EDJSON_BUFFER_DEPTH];
   parse_string_state_t string_fsm_state;
   parse_number_state_t number_fsm_state;
@@ -63,8 +119,6 @@ typedef struct {
   on_element_value_fn on_element_value;
 } json_parser_t;
 
-typedef json_ret_codes_t ( *json_state_fptr_t )(json_parser_t *);
-
 typedef int (*parser_fptr_t)(json_parser_t *);
 
 #define EDJSON_CHECK(VAL) do { \
@@ -78,36 +132,28 @@ extern "C"
 {
 #endif
 
-json_ret_codes_t handle_error(json_parser_t *parser);
-
 json_ret_codes_t parse_object(json_parser_t *parser);
 
 json_ret_codes_t parse_array(json_parser_t *parser);
 
-json_ret_codes_t parse_attribute(json_parser_t *parser);
-
 json_ret_codes_t parse_value(json_parser_t *parser);
-
 
 json_ret_codes_t parse(json_parser_t *parser);
 
-json_states_t lookup_transitions(json_states_t state, json_ret_codes_t code);
 
 json_ret_codes_t read_next(json_parser_t *parser, bool skip_spaces);
 
-int parse_string_constant(json_parser_t *parser);
+json_ret_codes_t parse_string_constant(json_parser_t *parser);
 
-int parse_string(json_parser_t *parser);
+json_ret_codes_t parse_string(json_parser_t *parser);
 
-int parse_number(json_parser_t *parser);
+json_ret_codes_t parse_number(json_parser_t *parser);
 
 parse_value_state_t value_recognition(json_parser_t *parser);
 
 void flush_string_buffer(json_parser_t *parser);
 
 json_ret_codes_t push_to_buffer(json_parser_t *parser, char symbol);
-
-json_ret_codes_t push_state(parse_object_state_t state, json_parser_t *parser);
 
 #ifdef __cplusplus
 }

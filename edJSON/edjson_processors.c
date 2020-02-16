@@ -15,7 +15,7 @@ static const char *FALSE_STRING = "false";
 static const char *NULL_STRING = "null";
 
 
-int parse_string_constant(json_parser_t *parser) {
+json_ret_codes_t parse_string_constant(json_parser_t *parser) {
   if (strstr(TRUE_STRING, parser->string_buffer)) {
     if (strlen(parser->string_buffer) == strlen(TRUE_STRING))
       return EDJSON_FINISH;
@@ -38,7 +38,7 @@ int parse_string_constant(json_parser_t *parser) {
   return EDJSON_ERR_WRONG_SYMBOL;
 }
 
-int parse_string(json_parser_t *parser) {
+json_ret_codes_t parse_string(json_parser_t *parser) {
   if (strchr(NEWLINE_CHARS, parser->current_symbol)) {
     return EDJSON_ERR_WRONG_SYMBOL;
   }
@@ -105,7 +105,7 @@ parse_value_state_t value_recognition(json_parser_t *parser) {
 
 static const char *NUMBER_ZERO_E_STATE = ".eE";
 
-int parse_number(json_parser_t *parser) {
+json_ret_codes_t parse_number(json_parser_t *parser) {
   switch (parser->number_fsm_state) {
     case number_begin:
       if (parser->string_buffer[0] == '-') {
