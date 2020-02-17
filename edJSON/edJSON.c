@@ -43,14 +43,7 @@ json_ret_codes_t parse(json_parser_t *parser) {
   if (reading_state != EDJSON_OK)
     return reading_state;
   parser->position = 0x00;
-  EDJSON_CHECK(read_next(parser, true));
-  json_ret_codes_t err_code;
-  if (parser->current_symbol == '{') {
-    err_code = parse_object(parser);
-  } else if (parser->current_symbol == '[')
-    err_code = parse_array(parser);
-  else
-    return EDJSON_ERR_WRONG_SYMBOL;
+  json_ret_codes_t err_code = detect_kind_of_value(parser);
   reading_state = parser->finish();
   return (err_code == EDJSON_FINISH) ? EDJSON_OK : err_code;
 }
@@ -92,6 +85,7 @@ json_ret_codes_t parse_attribute(json_parser_t *parser) {
   EDJSON_CHECK(read_next(parser, true));
   if (parser->current_symbol != ':')
     return EDJSON_ERR_WRONG_SYMBOL;
+
   err_code = detect_kind_of_value(parser);
   if (err_code)
     return err_code;
